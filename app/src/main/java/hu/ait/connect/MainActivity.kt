@@ -11,8 +11,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
+import hu.ait.connect.navigation.MainNavigation
 import hu.ait.connect.ui.screen.HomeScreen
+import hu.ait.connect.ui.screen.PersonDetailsScreen
 import hu.ait.connect.ui.theme.ConnectTheme
 
 @AndroidEntryPoint
@@ -23,9 +29,33 @@ class MainActivity : ComponentActivity() {
         setContent {
             ConnectTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    HomeScreen(modifier = Modifier.padding(innerPadding))
+                    ConnectAppNavHost(modifier = Modifier.padding(innerPadding))
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun ConnectAppNavHost(
+    modifier: Modifier = Modifier,
+    navController: NavHostController = rememberNavController(),
+    startDestination: String = MainNavigation.HomeScreen.route
+) {
+    NavHost(
+        navController = navController, startDestination = startDestination
+    ) {
+        composable(MainNavigation.HomeScreen.route) {
+            HomeScreen(
+                modifier = modifier,
+                onNavigateToPersonDetails = { personName ->
+                    navController.navigate("persondetails?personName=$personName")
+                }
+            )
+        }
+
+        composable(MainNavigation.PersonDetailsScreen.route) {
+            PersonDetailsScreen(personName = it.arguments?.getString("personName") ?: "")
         }
     }
 }

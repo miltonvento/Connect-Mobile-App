@@ -57,6 +57,7 @@ import androidx.compose.foundation.lazy.items
 fun HomeScreen(
     viewModel: HomeScreenViewModel = hiltViewModel(),
     modifier: Modifier = Modifier,
+    onNavigateToPersonDetails: (String) -> Unit
 ) {
     val peopleList = viewModel.getAllPeople().collectAsState(emptyList())
     var showAddDialog by rememberSaveable { mutableStateOf(false) }
@@ -104,10 +105,13 @@ fun HomeScreen(
                                 onDeletePerson = { person ->
                                     viewModel.deletePerson(person)
                                 },
+                                onNavigateToPersonDetails = onNavigateToPersonDetails
+
 //                                onItemEdit = { item ->
 //                                    itemToEdit = item
 //                                    showAddDialog = true
 //                                }
+
                             )
                         }
                     }
@@ -198,8 +202,7 @@ fun NewPersonDialog(
 fun PersonCard(
     person: Person,
     onDeletePerson: (Person) -> Unit,
-//    onItemEdit: (Person) -> Unit,
-//    onNavigateToWeatherDetails: (String) -> Unit
+    onNavigateToPersonDetails: (String) -> Unit
 ) {
     var personName = person.name
 
@@ -215,7 +218,7 @@ fun PersonCard(
             .padding(5.dp)
             .fillMaxWidth()
             .clickable {
-//                onNavigateToWeatherDetails(cityName)
+                onNavigateToPersonDetails(personName)
             },
     ) {
 
@@ -249,7 +252,7 @@ fun PersonCard(
 
                     IconButton(
                         onClick = {
-//                            onNavigateToWeatherDetails(cityName)
+                            onNavigateToPersonDetails(personName)
                         }
                     ) {
                         Icon(

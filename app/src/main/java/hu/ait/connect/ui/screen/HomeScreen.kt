@@ -1,13 +1,19 @@
 package hu.ait.connect.ui.screen
 
+import android.util.Log
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
@@ -17,6 +23,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -51,6 +58,16 @@ import hu.ait.connect.R
 import hu.ait.connect.data.Person
 import java.util.Date
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Stop
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.IconToggleButton
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.ui.text.font.FontStyle
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -133,11 +150,10 @@ fun NewPersonDialog(
     viewModel: HomeScreenViewModel,
     onCancel: () -> Unit
 ) {
-    var personName by remember {
-        mutableStateOf(
-            ""
-        )
-    }
+    var personName by remember { mutableStateOf("") }
+    var additionalDetails by remember { mutableStateOf("") }
+    var recordButtonChecked by remember { mutableStateOf(false) }
+    val scrollState = rememberScrollState()
 
     Dialog(onDismissRequest = {
         onCancel()
@@ -152,12 +168,12 @@ fun NewPersonDialog(
                 modifier = Modifier.padding(15.dp)
             ) {
                 Text(
-                    "New Person",
+                    "Add New Person",
                     style = MaterialTheme.typography.titleMedium
                 )
                 OutlinedTextField(
                     modifier = Modifier.fillMaxWidth(),
-                    label = { "Name" },
+                    label = { Text("Name")},
                     value = "$personName",
                     onValueChange = { personName = it },
 //                    isError = personName.isBlank(),
@@ -167,6 +183,172 @@ fun NewPersonDialog(
 //                        }
 //                    }
                 )
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Row(
+                    modifier = Modifier.horizontalScroll(scrollState),
+                    horizontalArrangement = Arrangement.SpaceAround
+                ){
+                    AssistChip(
+                        onClick = { Log.d("Assist chip", "add age") },
+                        label = { Text("Age") },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Filled.Add,
+                                contentDescription = "Add Age",
+                                Modifier.size(AssistChipDefaults.IconSize)
+                            )
+                        }
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    AssistChip(
+                        onClick = { Log.d("Assist chip", "add location") },
+                        label = { Text("Location") },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Filled.Add,
+                                contentDescription = "Add Location",
+                                Modifier.size(AssistChipDefaults.IconSize)
+                            )
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    AssistChip(
+                        onClick = { Log.d("Assist chip", "add occupation") },
+                        label = { Text("Occupation") },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Filled.Add,
+                                contentDescription = "Add Occupation",
+                                Modifier.size(AssistChipDefaults.IconSize)
+                            )
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    AssistChip(
+                        onClick = { Log.d("Assist chip", "Add Place of Work/Study") },
+                        label = { Text("Place of work/study") },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Filled.Add,
+                                contentDescription = "Add Place of Work/Study",
+                                Modifier.size(AssistChipDefaults.IconSize)
+                            )
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    AssistChip(
+                        onClick = { Log.d("Assist chip", "Add Stature") },
+                        label = { Text("Stature") },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Filled.Add,
+                                contentDescription = "Add Stature",
+                                Modifier.size(AssistChipDefaults.IconSize)
+                            )
+                        }
+                    )
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    AssistChip(
+                        onClick = { Log.d("Assist chip", "Add Nationality") },
+                        label = { Text("Nationality") },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Filled.Add,
+                                contentDescription = "Add Nationality",
+                                Modifier.size(AssistChipDefaults.IconSize)
+                            )
+                        }
+                    )
+
+//                    OutlinedButton(
+//                        onClick = {  },
+//                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red),
+//                        border = BorderStroke(1.dp, Color.Blue)
+//                    ) {
+//                        Icon(
+//                            imageVector = Icons.Filled.Add,
+//                            contentDescription = "Add Nationality",
+//                            modifier = Modifier.size(ButtonDefaults.IconSize)
+//                        )
+//                        Spacer(Modifier.size(ButtonDefaults.IconSpacing))
+//                        Text("Nationality", color = Color.Green)
+//                    }
+                }
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Row(){
+                    IconToggleButton(
+                        checked = recordButtonChecked,
+                        onCheckedChange = {
+                            recordButtonChecked= it
+                            // Handle speech recognition
+                        }
+                    ) {
+                        Icon(
+                            imageVector = if (recordButtonChecked) Icons.Filled.Stop else Icons.Filled.Mic,
+                            contentDescription = if (recordButtonChecked) "Stop" else "Record",
+                            modifier = Modifier.size(ButtonDefaults.IconSize)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Text(
+                        text = "Record speech for text transformation or type below",
+                        fontStyle = FontStyle.Italic
+                    )
+
+                }
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                OutlinedTextField(
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Additional Details")},
+                    value = "$additionalDetails",
+                    onValueChange = { additionalDetails = it },
+//                    isError = personName.isBlank(),
+//                    supportingText = {
+//                        if (personName.isBlank()) {
+//                            Text(text = "name required!", color = Color.Red)
+//                        }
+//                    }
+                )
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ){
+                    IconButton(
+                        onClick = {}
+                    ) {
+                        Icon(
+                            Icons.Filled.CameraAlt,
+                            contentDescription = "Add image"
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Text(text = "Upload Image (Optional)",
+                        fontStyle = FontStyle.Italic)
+
+                }
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End

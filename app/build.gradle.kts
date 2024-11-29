@@ -13,12 +13,12 @@ plugins {
 
 android {
     namespace = "hu.ait.connect"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "hu.ait.connect"
-        minSdk = 24
-        targetSdk = 34
+        minSdk = 25
+        targetSdk = 35
         versionCode = 1
         versionName = "1.0"
 
@@ -99,6 +99,8 @@ dependencies {
 
     implementation("com.google.dagger:hilt-android:2.51.1")
     kapt("com.google.dagger:hilt-android-compiler:2.51.1")
+
+    implementation("androidx.compose.material:material-icons-extended:1.7.0")
 }
 
 kapt {

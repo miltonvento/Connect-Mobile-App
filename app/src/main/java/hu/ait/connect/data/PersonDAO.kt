@@ -14,7 +14,7 @@ interface PersonDAO {
     fun getAllPeople() : Flow<List<Person>>
 
     @Query("SELECT * from persontable WHERE id = :id")
-    fun getShoppingItem(id: Int): Flow<Person>
+    fun getPerson(id: Int): Flow<Person>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(item: Person)

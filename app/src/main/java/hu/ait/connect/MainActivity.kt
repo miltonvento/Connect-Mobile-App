@@ -48,14 +48,14 @@ fun ConnectAppNavHost(
         composable(MainNavigation.HomeScreen.route) {
             HomeScreen(
                 modifier = modifier,
-                onNavigateToPersonDetails = { personName ->
-                    navController.navigate("persondetails?personName=$personName")
+                onNavigateToPersonDetails = { personId ->
+                    navController.navigate("persondetails?personId=$personId")
                 }
             )
         }
 
         composable(MainNavigation.PersonDetailsScreen.route) {
-            PersonDetailsScreen(personName = it.arguments?.getString("personName") ?: "")
+            PersonDetailsScreen(personId = it.arguments?.getString("personId") ?: "")
         }
     }
 }

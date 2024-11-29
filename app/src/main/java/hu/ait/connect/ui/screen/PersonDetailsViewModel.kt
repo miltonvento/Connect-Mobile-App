@@ -2,20 +2,25 @@ package hu.ait.connect.ui.screen
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
+import hu.ait.connect.data.Person
 import javax.inject.Inject
 
 @HiltViewModel
 class PersonDetailsViewModel  @Inject constructor(
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
-    var personName by mutableStateOf("")
+    var personId by mutableStateOf("")
+    var person: Person? = null
 
     init {
-        val tmpPersonName = savedStateHandle.get<String>("personName") ?: ""
-        personName = tmpPersonName
+        val tmpPersonId = savedStateHandle.get<String>("personId") ?: ""
+        personId = tmpPersonId
+//        person = PersonViewModel
+
     }
 }

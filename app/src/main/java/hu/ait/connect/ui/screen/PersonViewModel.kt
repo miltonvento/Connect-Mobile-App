@@ -11,12 +11,16 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class HomeScreenViewModel @Inject constructor(
+class PersonViewModel @Inject constructor(
     val personDAO: PersonDAO
 ) : ViewModel() {
 
     fun getAllPeople(): Flow<List<Person>> {
         return personDAO.getAllPeople()
+    }
+
+    fun getPersonById(id: Int): Flow<Person> {
+        return personDAO.getPerson(id)
     }
 
     fun addPerson(person: Person) {

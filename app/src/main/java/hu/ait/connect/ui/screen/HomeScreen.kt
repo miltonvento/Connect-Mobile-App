@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
@@ -39,7 +38,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -49,14 +47,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
-import hu.ait.connect.R
 import hu.ait.connect.data.Person
-import java.util.Date
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.filled.CameraAlt
@@ -72,7 +66,7 @@ import androidx.compose.ui.text.font.FontStyle
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    viewModel: HomeScreenViewModel = hiltViewModel(),
+    viewModel: PersonViewModel = hiltViewModel(),
     modifier: Modifier = Modifier,
     onNavigateToPersonDetails: (String) -> Unit
 ) {
@@ -147,7 +141,7 @@ fun HomeScreen(
 
 @Composable
 fun NewPersonDialog(
-    viewModel: HomeScreenViewModel,
+    viewModel: PersonViewModel,
     onCancel: () -> Unit
 ) {
     var personName by remember { mutableStateOf("") }
@@ -386,6 +380,7 @@ fun PersonCard(
     onDeletePerson: (Person) -> Unit,
     onNavigateToPersonDetails: (String) -> Unit
 ) {
+    var personId = person.id
     var personName = person.name
 
     Card(
@@ -400,7 +395,7 @@ fun PersonCard(
             .padding(5.dp)
             .fillMaxWidth()
             .clickable {
-                onNavigateToPersonDetails(personName)
+                onNavigateToPersonDetails(personId.toString())
             },
     ) {
 
@@ -434,7 +429,7 @@ fun PersonCard(
 
                     IconButton(
                         onClick = {
-                            onNavigateToPersonDetails(personName)
+                            onNavigateToPersonDetails(personId.toString())
                         }
                     ) {
                         Icon(

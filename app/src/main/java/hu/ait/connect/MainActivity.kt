@@ -55,7 +55,8 @@ fun ConnectAppNavHost(
         }
 
         composable(MainNavigation.PersonDetailsScreen.route) {
-            PersonDetailsScreen(personId = it.arguments?.getString("personId") ?: "")
+            PersonDetailsScreen(
+                navController = navController,personId = it.arguments?.getString("personId") ?: "")
         }
     }
 }

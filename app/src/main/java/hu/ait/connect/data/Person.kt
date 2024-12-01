@@ -9,4 +9,6 @@ import java.io.Serializable
 data class Person(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     @ColumnInfo(name = "name") val name:String,
-) : Serializable
+    @ColumnInfo(name = "description") val description:String,
+    @ColumnInfo(name = "tags") val tags:Map<String, Any>? = null,
+    ) : Serializable

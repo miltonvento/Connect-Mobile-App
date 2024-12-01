@@ -1,8 +1,17 @@
 package hu.ait.connect.navigation
 
-sealed class MainNavigation(val route: String) {
-    object HomeScreen : MainNavigation("home")
-    object PersonDetailsScreen : MainNavigation("persondetails?personId={personId}") {
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Category
+import androidx.compose.material.icons.filled.ChatBubble
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.ui.graphics.vector.ImageVector
+
+sealed class MainNavigation(val route: String, val icon: ImageVector, val label: String) {
+    object HomeScreen : MainNavigation("home", Icons.Default.Home, "Home")
+    object PersonDetailsScreen : MainNavigation("persondetails?personId={personId}", Icons.Default.Image, "Person Details") {
         fun createRoute(personId: String) = "persondetails?personId=$personId"
     }
+    object CategoryScreen : MainNavigation("category", Icons.Default.Category, "Categories")
+    object AiAssistance : MainNavigation("assistance", Icons.Default.ChatBubble, "Assistance")
 }

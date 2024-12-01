@@ -88,7 +88,9 @@ fun HomeScreen(
         floatingActionButton = {
             FloatingActionButton(onClick = {
                 showAddDialog = true
-            })
+            },
+                modifier = Modifier.padding(bottom = 72.dp)
+                )
             {
                 Icon(
                     imageVector = Icons.Filled.Add,
@@ -96,7 +98,7 @@ fun HomeScreen(
                 )
             }
         },
-    ) { innerpadding ->
+        content = { innerpadding ->
             Column(
                 modifier = modifier
                     .fillMaxSize()
@@ -104,7 +106,7 @@ fun HomeScreen(
             ) {
                 if (peopleList.value.isEmpty()) {
                     Text(
-                        "Empty list", modifier = Modifier
+                        "Click + to add a person", modifier = Modifier
                             .fillMaxSize()
                             .wrapContentSize(Alignment.Center)
                     )
@@ -137,7 +139,8 @@ fun HomeScreen(
                 )
             }
         }
-    }
+    )
+}
 
 @Composable
 fun NewPersonDialog(
@@ -342,7 +345,6 @@ fun NewPersonDialog(
                         fontStyle = FontStyle.Italic)
 
                 }
-
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
@@ -351,7 +353,9 @@ fun NewPersonDialog(
                         onClick = {
                             viewModel.addPerson(
                                 Person(
-                                    name = personName
+                                    name = personName,
+                                    description = additionalDetails,
+                                    tags = mapOf("Nationality" to "Zimbabwe", "Gender" to "Male", "Age" to "", "Location" to "Hundary", "Occupation" to "Doctor", "Place of work/study" to "Williams College", "Stature" to "Tall","Gender8" to "Male", "Age7" to "g", "Location6" to "Hundary", "Occupation5" to "Doctor","Gender4" to "Male", "Age3" to "p", "Location2" to "Hundary", "Occupation1" to "Doctor" )
                                 )
                             )
                             onCancel()

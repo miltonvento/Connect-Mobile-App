@@ -73,6 +73,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
+    implementation(libs.androidx.foundation.android)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -101,6 +102,8 @@ dependencies {
     kapt("com.google.dagger:hilt-android-compiler:2.51.1")
 
     implementation("androidx.compose.material:material-icons-extended:1.7.0")
+    implementation("com.google.code.gson:gson:2.8.9")
+    implementation ("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.0")
 }
 
 kapt {

@@ -20,6 +20,15 @@ import hu.ait.connect.navigation.MainNavigation
 import hu.ait.connect.ui.screen.HomeScreen
 import hu.ait.connect.ui.screen.PersonDetailsScreen
 import hu.ait.connect.ui.theme.ConnectTheme
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.runtime.getValue
+import androidx.navigation.compose.currentBackStackEntryAsState
+import hu.ait.connect.ui.screen.AiAssistanceScreen
+import hu.ait.connect.ui.screen.CategoryScreen
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -28,18 +37,28 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             ConnectTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    ConnectAppNavHost(modifier = Modifier.padding(innerPadding))
+                val navController = rememberNavController()
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    bottomBar = {
+                        BottomNavigationBar(navController = navController)
+                    }
+                ) { innerPadding ->
+                    ConnectAppNavHost(
+                        modifier = Modifier.padding(innerPadding),
+                        navController = navController
+                    )
                 }
             }
         }
     }
 }
 
+
 @Composable
 fun ConnectAppNavHost(
     modifier: Modifier = Modifier,
-    navController: NavHostController = rememberNavController(),
+    navController: NavHostController,
     startDestination: String = MainNavigation.HomeScreen.route
 ) {
     NavHost(
@@ -50,13 +69,58 @@ fun ConnectAppNavHost(
                 modifier = modifier,
                 onNavigateToPersonDetails = { personId ->
                     navController.navigate("persondetails?personId=$personId")
-                }
-            )
+                },
+
+                )
         }
 
         composable(MainNavigation.PersonDetailsScreen.route) {
             PersonDetailsScreen(
-                navController = navController,personId = it.arguments?.getString("personId") ?: "")
+                navController = navController, personId = it.arguments?.getString("personId") ?: ""
+            )
+        }
+
+        composable(MainNavigation.CategoryScreen.route) {
+            CategoryScreen(
+                navController = navController
+            )
+        }
+
+        composable(MainNavigation.AiAssistance.route) {
+            AiAssistanceScreen( navController = navController)
+        }
+    }
+}
+
+@Composable
+fun BottomNavigationBar(navController: NavHostController) {
+    val items = listOf(
+        MainNavigation.HomeScreen,
+        MainNavigation.CategoryScreen,
+        MainNavigation.AiAssistance
+    )
+    NavigationBar {
+        val currentBackStackEntry by navController.currentBackStackEntryAsState()
+        val currentDestination = currentBackStackEntry?.destination
+
+        items.forEach { screen ->
+            NavigationBarItem(
+                icon = { Icon(imageVector = screen.icon, contentDescription = screen.route) },
+                label = { Text(screen.label) },
+                selected = currentDestination?.route == screen.route,
+                onClick = {
+                    navController.navigate(screen.route) {
+                        // Avoid multiple copies of the same destination in the back stack
+                        launchSingleTop = true
+                        // Restore state when reselecting a previously selected tab
+                        restoreState = true
+                        // Clear the backstack to maintain navigation hierarchy
+                        popUpTo(navController.graph.startDestinationId) {
+                            saveState = true
+                        }
+                    }
+                }
+            )
         }
     }
 }

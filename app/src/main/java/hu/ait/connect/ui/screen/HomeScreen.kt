@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -54,13 +55,18 @@ import hu.ait.connect.data.Person
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.IconToggleButton
+import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.ui.text.font.FontStyle
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -148,6 +154,17 @@ fun NewPersonDialog(
     var additionalDetails by remember { mutableStateOf("") }
     var recordButtonChecked by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
+    val scrollStateChips = rememberScrollState()
+
+    var showLocationTextInput by remember { mutableStateOf(false) }
+    var showNationalityTextInput by remember { mutableStateOf(false) }
+    var showOccupationTextInput by remember { mutableStateOf(false) }
+    var location by remember { mutableStateOf("") }
+    var nationality by remember { mutableStateOf("") }
+    var occupation by remember { mutableStateOf("") }
+    var showLocationText by remember { mutableStateOf(false) }
+    var showNationalityText by remember { mutableStateOf(false) }
+    var showOccupationText by remember { mutableStateOf(false) }
 
     Dialog(onDismissRequest = {
         onCancel()
@@ -170,91 +187,26 @@ fun NewPersonDialog(
                     label = { Text("Name")},
                     value = "$personName",
                     onValueChange = { personName = it },
-//                    isError = personName.isBlank(),
-//                    supportingText = {
-//                        if (personName.isBlank()) {
-//                            Text(text = "name required!", color = Color.Red)
-//                        }
-//                    }
                 )
-
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 Row(
-                    modifier = Modifier.horizontalScroll(scrollState),
-                    horizontalArrangement = Arrangement.SpaceAround
+                    modifier = Modifier.horizontalScroll(scrollState)
                 ){
                     AssistChip(
-                        onClick = { Log.d("Assist chip", "add age") },
-                        label = { Text("Age") },
+                        onClick = { showLocationTextInput = true },
+                        label = { Text("Meeting Location") },
                         leadingIcon = {
                             Icon(
                                 Icons.Filled.Add,
-                                contentDescription = "Add Age",
+                                contentDescription = "Add Meeting Location",
                                 Modifier.size(AssistChipDefaults.IconSize)
                             )
                         }
                     )
                     Spacer(modifier = Modifier.width(16.dp))
-
                     AssistChip(
-                        onClick = { Log.d("Assist chip", "add location") },
-                        label = { Text("Location") },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Filled.Add,
-                                contentDescription = "Add Location",
-                                Modifier.size(AssistChipDefaults.IconSize)
-                            )
-                        }
-                    )
-
-                    Spacer(modifier = Modifier.width(16.dp))
-
-                    AssistChip(
-                        onClick = { Log.d("Assist chip", "add occupation") },
-                        label = { Text("Occupation") },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Filled.Add,
-                                contentDescription = "Add Occupation",
-                                Modifier.size(AssistChipDefaults.IconSize)
-                            )
-                        }
-                    )
-
-                    Spacer(modifier = Modifier.width(16.dp))
-
-                    AssistChip(
-                        onClick = { Log.d("Assist chip", "Add Place of Work/Study") },
-                        label = { Text("Place of work/study") },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Filled.Add,
-                                contentDescription = "Add Place of Work/Study",
-                                Modifier.size(AssistChipDefaults.IconSize)
-                            )
-                        }
-                    )
-
-                    Spacer(modifier = Modifier.width(16.dp))
-
-                    AssistChip(
-                        onClick = { Log.d("Assist chip", "Add Stature") },
-                        label = { Text("Stature") },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Filled.Add,
-                                contentDescription = "Add Stature",
-                                Modifier.size(AssistChipDefaults.IconSize)
-                            )
-                        }
-                    )
-
-                    Spacer(modifier = Modifier.width(16.dp))
-
-                    AssistChip(
-                        onClick = { Log.d("Assist chip", "Add Nationality") },
+                        onClick = { showNationalityTextInput = true },
                         label = { Text("Nationality") },
                         leadingIcon = {
                             Icon(
@@ -264,25 +216,116 @@ fun NewPersonDialog(
                             )
                         }
                     )
-
-//                    OutlinedButton(
-//                        onClick = {  },
-//                        colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Red),
-//                        border = BorderStroke(1.dp, Color.Blue)
-//                    ) {
-//                        Icon(
-//                            imageVector = Icons.Filled.Add,
-//                            contentDescription = "Add Nationality",
-//                            modifier = Modifier.size(ButtonDefaults.IconSize)
-//                        )
-//                        Spacer(Modifier.size(ButtonDefaults.IconSpacing))
-//                        Text("Nationality", color = Color.Green)
-//                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    AssistChip(
+                        onClick = { showOccupationTextInput = true },
+                        label = { Text("Occupation") },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Filled.Add,
+                                contentDescription = "Add Occupation",
+                                Modifier.size(AssistChipDefaults.IconSize)
+                            )
+                        }
+                    )
                 }
 
-                Spacer(modifier = Modifier.width(16.dp))
+                if (showLocationTextInput) {
+                    OutlinedTextField(
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Meeting Location")},
+                        value = "$location",
+                        onValueChange = { location = it },
+                        trailingIcon = {
+                            IconButton(onClick = {
+                                showLocationText = true
+                                showLocationTextInput = false
+                            }) {
+                                Icon(Icons.Default.Check, contentDescription = "Save")
+                            }
+                        }
+                    )
+                }
 
-                Row(){
+                if (showNationalityTextInput) {
+                    OutlinedTextField(
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Nationality")},
+                        value = "$nationality",
+                        onValueChange = { nationality = it },
+                        trailingIcon = {
+                            IconButton(onClick = {
+                                showNationalityText = true
+                                showNationalityTextInput = false
+                            }) {
+                                Icon(Icons.Default.Check, contentDescription = "Save")
+                            }
+                        }
+                    )
+                }
+
+                if (showOccupationTextInput) {
+                    OutlinedTextField(
+                        modifier = Modifier.fillMaxWidth(),
+                        label = { Text("Occupation")},
+                        value = "$occupation",
+                        onValueChange = { occupation = it },
+                        trailingIcon = {
+                            IconButton(onClick = {
+                                showOccupationText = true
+                                showOccupationTextInput = false
+                            }) {
+                                Icon(Icons.Default.Check, contentDescription = "Save")
+                            }
+                        }
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.horizontalScroll(scrollStateChips)
+                ){
+                    if (showLocationText) {
+                        AssistChip(
+                            onClick = { },
+                            label = { Text(location) },
+                            colors = AssistChipDefaults.assistChipColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    if (showNationalityText) {
+                        AssistChip(
+                            onClick = { },
+                            label = { Text(nationality) },
+                            colors = AssistChipDefaults.assistChipColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(16.dp))
+                    if (showOccupationText) {
+                        AssistChip(
+                            onClick = { },
+                            label = { Text(occupation) },
+                            colors = AssistChipDefaults.assistChipColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+                        )
+                    }
+                }
+
+                OutlinedTextField(
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Additional Details")},
+                    value = "$additionalDetails",
+                    onValueChange = { additionalDetails = it },
+//                    isError = personName.isBlank(),
+//                    supportingText = {
+//                        if (personName.isBlank()) {
+//                            Text(text = "name required!", color = Color.Red)
+//                        }
+//                    }
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Row( modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ){
                     IconToggleButton(
                         checked = recordButtonChecked,
                         onCheckedChange = {
@@ -300,28 +343,10 @@ fun NewPersonDialog(
                     Spacer(modifier = Modifier.width(16.dp))
 
                     Text(
-                        text = "Record speech for text transformation or type below",
+                        text = "Create voice note",
                         fontStyle = FontStyle.Italic
                     )
-
                 }
-
-                Spacer(modifier = Modifier.width(16.dp))
-
-                OutlinedTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Additional Details")},
-                    value = "$additionalDetails",
-                    onValueChange = { additionalDetails = it },
-//                    isError = personName.isBlank(),
-//                    supportingText = {
-//                        if (personName.isBlank()) {
-//                            Text(text = "name required!", color = Color.Red)
-//                        }
-//                    }
-                )
-
-                Spacer(modifier = Modifier.width(16.dp))
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -338,7 +363,7 @@ fun NewPersonDialog(
 
                     Spacer(modifier = Modifier.width(16.dp))
 
-                    Text(text = "Upload Image (Optional)",
+                    Text(text = "Upload Image",
                         fontStyle = FontStyle.Italic)
 
                 }

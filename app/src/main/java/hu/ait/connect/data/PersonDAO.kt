@@ -28,3 +28,8 @@ interface PersonDAO {
     @Query("DELETE from persontable")
     suspend fun deleteAllItems()
 }
+
+
+
+
+

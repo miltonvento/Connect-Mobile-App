@@ -62,11 +62,13 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.ui.text.font.FontStyle
+import hu.ait.connect.data.Configuration
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     viewModel: PersonViewModel = hiltViewModel(),
+    configurationViewModel: ConfigurationViewModel = hiltViewModel(),
     modifier: Modifier = Modifier,
     onNavigateToPersonDetails: (String) -> Unit
 ) {
@@ -86,11 +88,12 @@ fun HomeScreen(
             )
         },
         floatingActionButton = {
-            FloatingActionButton(onClick = {
-                showAddDialog = true
-            },
+            FloatingActionButton(
+                onClick = {
+                    showAddDialog = true
+                },
                 modifier = Modifier.padding(bottom = 72.dp)
-                )
+            )
             {
                 Icon(
                     imageVector = Icons.Filled.Add,
@@ -119,12 +122,6 @@ fun HomeScreen(
                                     viewModel.deletePerson(person)
                                 },
                                 onNavigateToPersonDetails = onNavigateToPersonDetails
-
-//                                onItemEdit = { item ->
-//                                    itemToEdit = item
-//                                    showAddDialog = true
-//                                }
-
                             )
                         }
                     }
@@ -170,7 +167,7 @@ fun NewPersonDialog(
                 )
                 OutlinedTextField(
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Name")},
+                    label = { Text("Name") },
                     value = "$personName",
                     onValueChange = { personName = it },
 //                    isError = personName.isBlank(),
@@ -186,7 +183,7 @@ fun NewPersonDialog(
                 Row(
                     modifier = Modifier.horizontalScroll(scrollState),
                     horizontalArrangement = Arrangement.SpaceAround
-                ){
+                ) {
                     AssistChip(
                         onClick = { Log.d("Assist chip", "add age") },
                         label = { Text("Age") },
@@ -285,11 +282,11 @@ fun NewPersonDialog(
 
                 Spacer(modifier = Modifier.width(16.dp))
 
-                Row(){
+                Row() {
                     IconToggleButton(
                         checked = recordButtonChecked,
                         onCheckedChange = {
-                            recordButtonChecked= it
+                            recordButtonChecked = it
                             // Handle speech recognition
                         }
                     ) {
@@ -313,7 +310,7 @@ fun NewPersonDialog(
 
                 OutlinedTextField(
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Additional Details")},
+                    label = { Text("Additional Details") },
                     value = "$additionalDetails",
                     onValueChange = { additionalDetails = it },
 //                    isError = personName.isBlank(),
@@ -329,7 +326,7 @@ fun NewPersonDialog(
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
-                ){
+                ) {
                     IconButton(
                         onClick = {}
                     ) {
@@ -341,8 +338,10 @@ fun NewPersonDialog(
 
                     Spacer(modifier = Modifier.width(16.dp))
 
-                    Text(text = "Upload Image (Optional)",
-                        fontStyle = FontStyle.Italic)
+                    Text(
+                        text = "Upload Image (Optional)",
+                        fontStyle = FontStyle.Italic
+                    )
 
                 }
                 Row(
@@ -355,7 +354,11 @@ fun NewPersonDialog(
                                 Person(
                                     name = personName,
                                     description = additionalDetails,
-                                    tags = mapOf("Nationality" to "Zimbabwe", "Gender" to "Male", "Age" to "", "Location" to "Hundary", "Occupation" to "Doctor", "Place of work/study" to "Williams College", "Stature" to "Tall","Gender8" to "Male", "Age7" to "g", "Location6" to "Hundary", "Occupation5" to "Doctor","Gender4" to "Male", "Age3" to "p", "Location2" to "Hundary", "Occupation1" to "Doctor" )
+//                                    tags = mapOf(
+//                                        "Nationality" to "",
+//                                        "Gender" to "Male",
+//                                        "Meeting Location" to ""
+//                                    )
                                 )
                             )
                             onCancel()

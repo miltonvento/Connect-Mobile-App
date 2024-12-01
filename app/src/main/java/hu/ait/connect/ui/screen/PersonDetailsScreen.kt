@@ -56,6 +56,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -72,7 +73,9 @@ fun PersonDetailsScreen(
     navController: NavHostController,
     personId: String,
     personViewModel: PersonViewModel = hiltViewModel(),
+    configurationViewModel: ConfigurationViewModel = hiltViewModel()
 ) {
+    val configuration = configurationViewModel.getConfig().collectAsState(initial = null)
     val person = personViewModel.getPersonById(personId.toInt()).collectAsState(initial = null)
     var personName by rememberSaveable { mutableStateOf("") }
     var personDescription by rememberSaveable { mutableStateOf("") }
@@ -108,7 +111,10 @@ fun PersonDetailsScreen(
                     },
                     actions = {
                         // Content placed in the top-right corner
-                        IconButton(onClick = { /* Handle action here */ }) {
+                        IconButton(onClick = {
+                            personViewModel.deletePerson(person.value!!)
+                            navController.popBackStack()
+                        }) {
                             Icon(
                                 imageVector = Icons.Filled.Delete,
                                 contentDescription = "Delete"
@@ -156,7 +162,7 @@ fun PersonDetailsScreen(
                     )
                     Spacer(Modifier.height(5.dp))
 
-                    TagArea(person.value!!.tags)
+                    TagArea(person.value!!.tags, configuration.value?.taglist)
 
                     Text(
                         "Notes",
@@ -170,7 +176,7 @@ fun PersonDetailsScreen(
                     PersonInfor(personViewModel, person)
 
 //                Text("Name: $personName, Description: $personDescription Tags: ${person.value!!.tags}")
-
+//                    Text(configuration.value?.taglist.toString())
                 }
             }
         )
@@ -181,10 +187,40 @@ fun PersonDetailsScreen(
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun TagArea(
-    tags: Map<String, Any>?
+    tags: Map<String, Any>?,
+    taglist: List<String>? = null
 ) {
     if (tags == null || tags.isEmpty()) {
-        Text("No memory cues added. Click below to add memory cues")
+        Text("No memory cues added. Click below to add memory cues", fontStyle = FontStyle.Italic)
+        FlowRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(2.dp),
+        ) {
+            taglist?.forEach { tag ->
+                if (tag != "") {
+                    AssistChip(
+                        onClick = {},
+                        label = {
+                            Text(
+                                tag.toString(),
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    fontSize = 16.sp,
+                                ),
+                            )
+                        },
+                        leadingIcon = {
+                            Icon(
+                                Icons.Filled.Add,
+                                contentDescription = "$tag",
+                                Modifier.size(AssistChipDefaults.IconSize)
+                            )
+                        }
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                }
+            }
+        }
         return
     }
 
@@ -192,7 +228,8 @@ fun TagArea(
 
     Box(
         modifier = Modifier
-            .height(100.dp).verticalScroll(scrollState)
+            .height(100.dp)
+            .verticalScroll(scrollState)
     ) {
         FlowRow(
             modifier = Modifier
@@ -227,7 +264,6 @@ fun PersonInfor(
     personViewModel: PersonViewModel,
     person: State<Person?>
 ) {
-
     EditableText(personViewModel, person.value!!)
 }
 
@@ -251,7 +287,9 @@ fun EditableText(
     }
 
     Card(
-        modifier = Modifier.background(MaterialTheme.colorScheme.surface).height(250.dp)
+        modifier = Modifier
+            .background(MaterialTheme.colorScheme.surface)
+            .height(250.dp)
     ) {
         Box(
             modifier = Modifier
@@ -262,7 +300,7 @@ fun EditableText(
             if (isEditing) {
                 // Editable text field
                 BasicTextField(
-                    value = text ?: "",
+                    value = text,
                     onValueChange = { newText -> text = newText },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -281,10 +319,13 @@ fun EditableText(
                     }
                     ))
             } else {
+
                 Text(
-                    text = text,
+                    text = if (text == "") "Tap to add notes..." else text,
                     color = MaterialTheme.colorScheme.onSurface,
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = MaterialTheme.typography.bodyLarge.copy(
+                        fontStyle = if (text == "") FontStyle.Italic else FontStyle.Normal
+                    ),
                     lineHeight = 24.sp,
                     modifier = Modifier.padding(bottom = 4.dp, top = 4.dp, start = 4.dp, end = 4.dp)
                 )

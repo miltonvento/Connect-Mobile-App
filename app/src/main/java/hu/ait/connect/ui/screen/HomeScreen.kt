@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -61,7 +63,12 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.Tab
+import androidx.compose.ui.layout.BeyondBoundsLayout
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.style.ResolvedTextDirection
+import androidx.compose.ui.unit.LayoutDirection
 import hu.ait.connect.data.Configuration
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -75,17 +82,38 @@ fun HomeScreen(
     val peopleList = viewModel.getAllPeople().collectAsState(emptyList())
     var showAddDialog by rememberSaveable { mutableStateOf(false) }
 
+    val tabs = listOf("All", "Category 2", "Category 3", "Category 4", "Category 5", "Category 6")
+    var selectedTabIndex by remember { mutableStateOf(0) }
+
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = { Text("Connect") },
-                colors = TopAppBarDefaults.topAppBarColors(
+            Column {
+                TopAppBar(
+                    title = { Text("Connect") },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        titleContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        navigationIconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                        actionIconContentColor = MaterialTheme.colorScheme.onSecondaryContainer
+                    ),
+                )
+                ScrollableTabRow(
+                    selectedTabIndex = selectedTabIndex,
+                    edgePadding = 16.dp,
                     containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                    navigationIconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                    actionIconContentColor = MaterialTheme.colorScheme.onSecondaryContainer
-                ),
-            )
+                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                ) {
+                    tabs.forEachIndexed { index, tab ->
+                        Tab(
+                            selected = selectedTabIndex == index,
+                            onClick = { selectedTabIndex = index },
+                            text = { Text(tab) }
+                        )
+                    }
+                }
+            }
+
+
         },
         floatingActionButton = {
             FloatingActionButton(
@@ -107,6 +135,7 @@ fun HomeScreen(
                     .fillMaxSize()
                     .padding(innerpadding)
             ) {
+
                 if (peopleList.value.isEmpty()) {
                     Text(
                         "Click + to add a person", modifier = Modifier

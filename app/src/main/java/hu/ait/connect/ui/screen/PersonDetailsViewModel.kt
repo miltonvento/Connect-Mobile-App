@@ -20,7 +20,6 @@ class PersonDetailsViewModel  @Inject constructor(
     init {
         val tmpPersonId = savedStateHandle.get<String>("personId") ?: ""
         personId = tmpPersonId
-//        person = PersonViewModel
-
     }
+
 }

@@ -116,7 +116,8 @@ fun BottomNavigationBar(navController: NavHostController) {
                         restoreState = true
                         // Clear the backstack to maintain navigation hierarchy
                         popUpTo(navController.graph.startDestinationId) {
-                            saveState = true
+//                            saveState = true
+                            inclusive = true
                         }
                     }
                 }

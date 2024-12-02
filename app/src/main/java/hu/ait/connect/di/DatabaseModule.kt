@@ -8,6 +8,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import hu.ait.connect.data.AppDatabase
 import hu.ait.connect.data.PersonDAO
+import hu.ait.connect.data.ConfigurationDAO
 import javax.inject.Singleton
 
 @InstallIn(SingletonComponent::class)
@@ -19,8 +20,13 @@ class DatabaseModule {
     }
 
     @Provides
+    fun provideConfigurationDao(appDatabase: AppDatabase): ConfigurationDAO {
+        return appDatabase.configurationDao()
+    }
+
+    @Provides
     @Singleton
-    fun provideTodoAppDatabase(@ApplicationContext appContext: Context): AppDatabase {
+    fun provideAppDatabase(@ApplicationContext appContext: Context): AppDatabase {
         return AppDatabase.getDatabase(appContext)
     }
 }

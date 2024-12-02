@@ -74,6 +74,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.androidx.foundation.android)
+    implementation(libs.androidx.runtime.livedata)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -104,6 +105,8 @@ dependencies {
     implementation("androidx.compose.material:material-icons-extended:1.7.0")
     implementation("com.google.code.gson:gson:2.8.9")
     implementation ("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.0")
+
+    implementation("com.google.accompanist:accompanist-permissions:0.31.1-alpha")
 }
 
 kapt {

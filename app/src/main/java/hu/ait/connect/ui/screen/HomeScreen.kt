@@ -1,14 +1,15 @@
 package hu.ait.connect.ui.screen
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.calculateEndPadding
-import androidx.compose.foundation.layout.calculateStartPadding
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -56,19 +57,20 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.IconToggleButton
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
-import androidx.compose.ui.layout.BeyondBoundsLayout
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.style.ResolvedTextDirection
-import androidx.compose.ui.unit.LayoutDirection
-import hu.ait.connect.data.Configuration
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -157,24 +159,33 @@ fun HomeScreen(
             }
 
             if (showAddDialog) {
-                NewPersonDialog(viewModel,
+                NewPersonDialog(
+                    viewModel,
                     onCancel = {
                         showAddDialog = false
+                    },
+                    onSave = {
+                        showAddDialog = false
                     }
+
                 )
             }
         }
     )
 }
 
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun NewPersonDialog(
     viewModel: PersonViewModel,
-    onCancel: () -> Unit
+    audioRecordViewModel: AudioRecordViewModel = viewModel(factory = AudioRecordViewModel.factory),
+    onCancel: () -> Unit,
+    onSave: () -> Unit
 ) {
     var personName by remember { mutableStateOf("") }
     var additionalDetails by remember { mutableStateOf("") }
-    var recordButtonChecked by remember { mutableStateOf(false) }
+    var audioRecorded by remember { mutableStateOf(false) }
+    var isPlaying by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
     val scrollStateChips = rememberScrollState()
 
@@ -187,6 +198,13 @@ fun NewPersonDialog(
     var showLocationText by remember { mutableStateOf(false) }
     var showNationalityText by remember { mutableStateOf(false) }
     var showOccupationText by remember { mutableStateOf(false) }
+
+    val permissionsState = rememberMultiplePermissionsState(
+        permissions = listOf(
+            android.Manifest.permission.RECORD_AUDIO
+
+        )
+    )
 
     Dialog(onDismissRequest = {
         onCancel()
@@ -214,7 +232,7 @@ fun NewPersonDialog(
 
                 Row(
                     modifier = Modifier.horizontalScroll(scrollState)
-                )  {
+                ) {
                     AssistChip(
                         onClick = { showLocationTextInput = true },
                         label = { Text("Meeting Location") },
@@ -255,7 +273,7 @@ fun NewPersonDialog(
                 if (showLocationTextInput) {
                     OutlinedTextField(
                         modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Meeting Location")},
+                        label = { Text("Meeting Location") },
                         value = "$location",
                         onValueChange = { location = it },
                         trailingIcon = {
@@ -272,7 +290,7 @@ fun NewPersonDialog(
                 if (showNationalityTextInput) {
                     OutlinedTextField(
                         modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Nationality")},
+                        label = { Text("Nationality") },
                         value = "$nationality",
                         onValueChange = { nationality = it },
                         trailingIcon = {
@@ -289,7 +307,7 @@ fun NewPersonDialog(
                 if (showOccupationTextInput) {
                     OutlinedTextField(
                         modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Occupation")},
+                        label = { Text("Occupation") },
                         value = "$occupation",
                         onValueChange = { occupation = it },
                         trailingIcon = {
@@ -305,7 +323,7 @@ fun NewPersonDialog(
 
                 Row(
                     modifier = Modifier.horizontalScroll(scrollStateChips)
-                ){
+                ) {
                     if (showLocationText) {
                         AssistChip(
                             onClick = { },
@@ -333,7 +351,7 @@ fun NewPersonDialog(
 
                 OutlinedTextField(
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Additional Details")},
+                    label = { Text("Additional Details") },
                     value = "$additionalDetails",
                     onValueChange = { additionalDetails = it },
 //                    isError = personName.isBlank(),
@@ -345,33 +363,22 @@ fun NewPersonDialog(
                 )
                 Spacer(modifier = Modifier.height(12.dp))
 
-
-                Row( modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ){
-                    IconToggleButton(
-                        checked = recordButtonChecked,
-                        onCheckedChange = {
-                            recordButtonChecked = it
-                            // Handle speech recognition
-                        }
-                    ) {
-                        Icon(
-                            imageVector = if (recordButtonChecked) Icons.Filled.Stop else Icons.Filled.Mic,
-                            contentDescription = if (recordButtonChecked) "Stop" else "Record",
-                            modifier = Modifier.size(ButtonDefaults.IconSize)
-                        )
+                if (permissionsState.allPermissionsGranted) {
+                    RecordingUI(audioRecordViewModel = audioRecordViewModel,
+                        onAudioRecorded = {audioRecorded = true})
+                } else {
+                    Button(onClick = {
+                        permissionsState.launchMultiplePermissionRequest()
+                    }) {
+                        Text(text = "Request permissions")
                     }
-
-                    Spacer(modifier = Modifier.width(16.dp))
-
-                    Text(
-                        text = "Create voice note",
-                        fontStyle = FontStyle.Italic
-                    )
                 }
-              
+
                 Spacer(modifier = Modifier.width(16.dp))
+
+                if (audioRecorded) {
+                    AudioPlaybackUI(audioRecordViewModel = audioRecordViewModel)
+                }
 
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -388,8 +395,10 @@ fun NewPersonDialog(
 
                     Spacer(modifier = Modifier.width(16.dp))
 
-                    Text(text = "Upload Image",
-                        fontStyle = FontStyle.Italic)
+                    Text(
+                        text = "Upload Image",
+                        fontStyle = FontStyle.Italic
+                    )
                 }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -406,9 +415,16 @@ fun NewPersonDialog(
 //                                        "Gender" to "Male",
 //                                        "Meeting Location" to ""
 //                                    )
+                                    audio = if (audioRecorded) {
+                                        audioRecordViewModel.getAudioByteArray() // Assign audio if recorded
+                                    } else {
+                                        null // Provide null if audio is not recorded
+                                    }
                                 )
                             )
-                            onCancel()
+                            audioRecordViewModel.stopRecording() // Stop recording when saving
+                            audioRecordViewModel.stopPlaying()   // Stop playback when saving
+                            onSave()
                         },
 //                        enabled = personName.isNotEmpty()
                     ) {
@@ -417,6 +433,8 @@ fun NewPersonDialog(
 
                     TextButton(
                         onClick = {
+                            audioRecordViewModel.stopRecording() // Stop recording when canceling
+                            audioRecordViewModel.stopPlaying()   // Stop playback when canceling
                             onCancel()
                         },
                     ) {
@@ -493,6 +511,139 @@ fun PersonCard(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun AudioVisualizer(amplitude: Int, modifier: Modifier = Modifier) {
+    val bars = 10
+    val maxAmplitude = 32767 // MediaRecorder's max amplitude value
+    val normalizedAmplitude = (amplitude.toFloat() / maxAmplitude * bars).toInt()
+
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        for (i in 1..bars) {
+            val heightFactor = if (i <= normalizedAmplitude) i.toFloat() / bars else 0.2f
+            Box(
+                modifier = Modifier
+                    .width(8.dp)
+                    .height((30.dp * heightFactor).coerceAtLeast(5.dp))
+                    .background(
+                        color = if (i <= normalizedAmplitude) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                        shape = RoundedCornerShape(50)
+                    )
+            )
+        }
+    }
+}
+
+@Composable
+fun RecordingUI(audioRecordViewModel: AudioRecordViewModel, onAudioRecorded: () -> Unit) {
+    val amplitude by audioRecordViewModel.audioAmplitude.observeAsState(0)
+    var isRecording by remember { mutableStateOf(false) }
+
+    Row( modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ){
+        IconToggleButton(
+            checked = isRecording,
+            onCheckedChange = { checked ->
+                isRecording = checked
+                if (checked) {
+                    audioRecordViewModel.startRecording()
+                } else {
+                    audioRecordViewModel.stopRecording()
+                    onAudioRecorded()
+                }
+            }
+        ) {
+            Icon(
+                imageVector = if (isRecording) Icons.Filled.Stop else Icons.Filled.Mic,
+                contentDescription = if (isRecording) "Stop Recording" else "Start Recording",
+                modifier = Modifier.size(ButtonDefaults.IconSize)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+        Column (){
+            Text(
+                text = if (!isRecording) "Press to Record" else "",
+                style = MaterialTheme.typography.bodyMedium
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (isRecording) {
+                // Show visualizer while recording
+                AudioVisualizer(amplitude = amplitude, modifier = Modifier.fillMaxWidth().height(50.dp))
+            }
+        }
+
+    }
+}
+
+@Composable
+fun AudioPlaybackVisualizer(progress: Float, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(20.dp)
+            .background(MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(4.dp))
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxHeight()
+                .fillMaxWidth(progress)
+                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(4.dp))
+        )
+    }
+}
+
+@Composable
+fun AudioPlaybackUI(audioRecordViewModel: AudioRecordViewModel) {
+    val playbackProgress by audioRecordViewModel.playbackProgress.observeAsState(0f)
+    val playbackComplete by audioRecordViewModel.playbackComplete.observeAsState(false)
+    var isPlaying by remember { mutableStateOf(false) }
+
+    if (playbackComplete && isPlaying) {
+        // Reset UI when playback completes
+        isPlaying = false
+    }
+//    else if (playbackComplete) {
+//        isPlaying = false
+//    }
+
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        IconToggleButton(
+            checked = isPlaying,
+            onCheckedChange = { checked ->
+                isPlaying = checked
+                if (checked) {
+                    audioRecordViewModel.startPlaying()
+                } else {
+                    audioRecordViewModel.stopPlaying()
+                }
+            }
+        ) {
+            Icon(
+                imageVector = if (isPlaying) Icons.Default.Stop else Icons.Default.PlayArrow,
+                contentDescription = if (isPlaying) "Stop Playing" else "Start Playing",
+                modifier = Modifier.size(ButtonDefaults.IconSize)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        if (isPlaying) {
+            AudioPlaybackVisualizer(
+                progress = playbackProgress,
+                modifier = Modifier.fillMaxWidth().height(20.dp)
+            )
         }
     }
 }

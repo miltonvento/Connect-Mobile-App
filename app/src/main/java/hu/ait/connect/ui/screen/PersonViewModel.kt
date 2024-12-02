@@ -54,4 +54,11 @@ class PersonViewModel @Inject constructor(
            personDAO.deleteAllItems()
         }
     }
+
+    fun savePersonWithAudio(person: Person) {
+        viewModelScope.launch {
+            // Assuming you have a repository or DAO to interact with the database
+            personDAO.insert(person)
+        }
+    }
 }

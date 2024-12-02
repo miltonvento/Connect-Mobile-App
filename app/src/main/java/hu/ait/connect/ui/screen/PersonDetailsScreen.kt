@@ -88,17 +88,13 @@ fun PersonDetailsScreen(
         personName = person.value!!.name
         personDescription = person.value!!.description
 
-//    val description =
-//        "The first time I met Sarah, she had an easy smile that made me feel instantly at ease. She wore a deep blue jacket that seemed to complement the calmness in her eyes, which were a striking shade of green, almost like the color of a forest after rain. Her voice was soft but confident, and she spoke with an openness that made me feel like I could talk to her for hours. I remember how she laughed at something silly I said, her laugh warm and genuine, like we had known each other for years. She had a quiet strength about her, yet there was something playful in the way she moved, as if she was always up for a bit of adventure".trimIndent()
-
-
         Scaffold(
             topBar = {
                 TopAppBar(
                     title = {
                         Text(
                             text = "Person Details",
-                            style = MaterialTheme.typography.titleLarge
+                            style = MaterialTheme.typography.titleMedium
                         )
                     },
                     navigationIcon = {

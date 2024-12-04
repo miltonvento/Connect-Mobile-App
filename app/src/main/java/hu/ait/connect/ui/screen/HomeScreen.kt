@@ -450,10 +450,12 @@ fun NewPersonDialog(
 fun PersonCard(
     person: Person,
     onDeletePerson: (Person) -> Unit,
-    onNavigateToPersonDetails: (String) -> Unit
+    onNavigateToPersonDetails: (String) -> Unit,
+    audioRecordViewModel: AudioRecordViewModel = viewModel(factory = AudioRecordViewModel.factory),
 ) {
     var personId = person.id
     var personName = person.name
+    var personAudio = person.audio
 
     Card(
         colors = CardDefaults.cardColors(
@@ -485,6 +487,12 @@ fun PersonCard(
                     Text(
                         text = "$personName",
                     )
+                    if (personAudio != null){
+                        audioRecordViewModel.saveAudioFileFromByteArray(personAudio, "$personId, audio.3gp")
+                        if (audioRecordViewModel.isFileExists("$personId, audio.3gp")) {
+                            AudioPlaybackUI(audioRecordViewModel = audioRecordViewModel, audioFilePath = "$personId, audio.3gp")
+                        }
+                    }
                 }
 
                 Row(
@@ -605,7 +613,7 @@ fun AudioPlaybackVisualizer(progress: Float, modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun AudioPlaybackUI(audioRecordViewModel: AudioRecordViewModel) {
+fun AudioPlaybackUI(audioRecordViewModel: AudioRecordViewModel, audioFilePath: String? = null) {
     val playbackProgress by audioRecordViewModel.playbackProgress.observeAsState(0f)
     val playbackComplete by audioRecordViewModel.playbackComplete.observeAsState(false)
     var isPlaying by remember { mutableStateOf(false) }
@@ -613,10 +621,8 @@ fun AudioPlaybackUI(audioRecordViewModel: AudioRecordViewModel) {
     if (playbackComplete && isPlaying) {
         // Reset UI when playback completes
         isPlaying = false
+        audioRecordViewModel.stopPlaying() // Ensure cleanup
     }
-//    else if (playbackComplete) {
-//        isPlaying = false
-//    }
 
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         IconToggleButton(
@@ -624,7 +630,7 @@ fun AudioPlaybackUI(audioRecordViewModel: AudioRecordViewModel) {
             onCheckedChange = { checked ->
                 isPlaying = checked
                 if (checked) {
-                    audioRecordViewModel.startPlaying()
+                    audioRecordViewModel.startPlaying(audioFilePath)
                 } else {
                     audioRecordViewModel.stopPlaying()
                 }

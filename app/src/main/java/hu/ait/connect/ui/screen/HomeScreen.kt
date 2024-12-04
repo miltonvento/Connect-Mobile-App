@@ -1,7 +1,11 @@
 package hu.ait.connect.ui.screen
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -55,6 +59,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import hu.ait.connect.data.Person
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.PlayArrow
@@ -67,10 +72,14 @@ import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import coil.compose.AsyncImage
+import hu.ait.connect.ui.screen.camera.ComposeFileProvider
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -185,7 +194,6 @@ fun NewPersonDialog(
     var personName by remember { mutableStateOf("") }
     var additionalDetails by remember { mutableStateOf("") }
     var audioRecorded by remember { mutableStateOf(false) }
-    var isPlaying by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
     val scrollStateChips = rememberScrollState()
 
@@ -201,9 +209,24 @@ fun NewPersonDialog(
 
     val permissionsState = rememberMultiplePermissionsState(
         permissions = listOf(
-            android.Manifest.permission.RECORD_AUDIO
-
+            android.Manifest.permission.RECORD_AUDIO,
+            android.Manifest.permission.CAMERA
         )
+    )
+
+    var hasImage by remember {
+        mutableStateOf(false)
+    }
+    var imageUri by remember {
+        mutableStateOf<Uri?>(null)
+    }
+    val context = LocalContext.current
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture(),
+        onResult = { success ->
+            hasImage = success
+        }
     )
 
     Dialog(onDismissRequest = {
@@ -384,22 +407,57 @@ fun NewPersonDialog(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(
-                        onClick = {}
-                    ) {
-                        Icon(
-                            Icons.Filled.CameraAlt,
-                            contentDescription = "Add image"
+                    if (permissionsState.allPermissionsGranted) {
+                        IconButton(
+                            onClick = {
+                                val uri = ComposeFileProvider.getImageUri(context)
+                                imageUri = uri
+                                cameraLauncher.launch(uri)
+                            }
+                        ) {
+                            Icon(
+                                Icons.Filled.CameraAlt,
+                                contentDescription = "Add image"
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(16.dp))
+
+                        Text(
+                            text = "Upload Image",
+                            fontStyle = FontStyle.Italic
                         )
+                    } else {
+                        val textToShow = if (permissionsState.shouldShowRationale) {
+                            // If the user has denied the permission but the rationale can be shown,
+                            // then gently explain why the app requires this permission
+                            "RATIONALEXPLANATION The camera is important for this app. Please grant the permission."
+                        } else {
+                            // If it's the first time the user lands on this feature, or the user
+                            // doesn't want to be asked again for this permission, explain that the
+                            // permission is required
+                            "Camera permission required for this feature to be available. " +
+                                    "Please grant the permission"
+                        }
+                        Text(textToShow)
+
+                        Button(onClick = {
+                            permissionsState.launchMultiplePermissionRequest()
+                        }) {
+                            Text("Request permission")
+                        }
                     }
-
-                    Spacer(modifier = Modifier.width(16.dp))
-
-                    Text(
-                        text = "Upload Image",
-                        fontStyle = FontStyle.Italic
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                if (hasImage && imageUri != null) {
+                    AsyncImage(
+                        model = imageUri,
+                        modifier = Modifier.size(200.dp, 200.dp),
+                        contentDescription = "Selected image",
                     )
                 }
+                Spacer(modifier = Modifier.height(16.dp))
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
@@ -419,7 +477,8 @@ fun NewPersonDialog(
                                         audioRecordViewModel.getAudioByteArray() // Assign audio if recorded
                                     } else {
                                         null // Provide null if audio is not recorded
-                                    }
+                                    },
+                                    imageUri = imageUri?.toString() // Save the image URI
                                 )
                             )
                             audioRecordViewModel.stopRecording() // Stop recording when saving
@@ -456,6 +515,7 @@ fun PersonCard(
     var personId = person.id
     var personName = person.name
     var personAudio = person.audio
+    val personImageUri = person.imageUri
 
     Card(
         colors = CardDefaults.cardColors(
@@ -481,6 +541,18 @@ fun PersonCard(
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Display the image if available
+                personImageUri?.let { uri ->
+                    AsyncImage(
+                        model = uri,
+                        contentDescription = "Person Image",
+                        modifier = Modifier
+                            .size(40.dp) // Adjust the size to your preference
+                            .clip(CircleShape) // Optional: make the image circular
+                            .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
                 Column(
                     modifier = Modifier.weight(1f)
                 ) {
@@ -653,3 +725,21 @@ fun AudioPlaybackUI(audioRecordViewModel: AudioRecordViewModel, audioFilePath: S
         }
     }
 }
+
+//@Composable
+//fun CameraScreen() {
+//    var hasImage by remember {
+//        mutableStateOf(false)
+//    }
+//    var imageUri by remember {
+//        mutableStateOf<Uri?>(null)
+//    }
+//    val context = LocalContext.current
+//
+//    val cameraLauncher = rememberLauncherForActivityResult(
+//        contract = ActivityResultContracts.TakePicture(),
+//        onResult = { success ->
+//            hasImage = success
+//        }
+//    )
+//}

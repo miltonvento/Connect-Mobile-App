@@ -107,6 +107,7 @@ dependencies {
     implementation ("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.0")
 
     implementation("com.google.accompanist:accompanist-permissions:0.31.1-alpha")
+    implementation("io.coil-kt:coil-compose:2.1.0")
 }
 
 kapt {

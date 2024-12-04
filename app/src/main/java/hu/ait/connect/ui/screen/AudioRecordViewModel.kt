@@ -72,15 +72,17 @@ class AudioRecordViewModel(private var context: Context) : ViewModel(){
         }
     }
 
-    fun startPlaying() {
+    fun startPlaying(audioFilePath: String? = "audiorecordtest.3gp") {
+        stopPlaying() // Ensure previous instance is stopped
         myPlayer = MediaPlayer()
         try {
-            myPlayer?.setDataSource(context.openFileInput("audiorecordtest.3gp").fd)
+            myPlayer?.setDataSource(context.openFileInput(audioFilePath).fd)
             myPlayer?.setOnPreparedListener {
                 myPlayer?.start()
                 startUpdatingPlaybackProgress()
             }
             myPlayer?.setOnCompletionListener {
+                Log.d("TAG", "Playback completed")
                 stopPlaying()
                 _playbackComplete.value = true
             }
@@ -94,12 +96,15 @@ class AudioRecordViewModel(private var context: Context) : ViewModel(){
         try {
             myPlayer?.stop()
             myPlayer?.release()
+            Log.d("TAG", "MediaPlayer released")
+            myPlayer = null // Clear the player reference
             _playbackProgress.value = 0f
             _playbackComplete.value = false
             playbackHandler.removeCallbacksAndMessages(null)
         } catch (e: IllegalStateException) {
-            Log.e("TAG_AUDIO_RECORD", "stopping playing audio failed")
+            Log.e("TAG_AUDIO_RECORD", "stopping playing audio failed ${e.message}")
         }
+        myPlayer = null
     }
 
     private fun startUpdatingPlaybackProgress() {
@@ -127,14 +132,49 @@ class AudioRecordViewModel(private var context: Context) : ViewModel(){
         }
     }
 
+//    override fun onCleared() {
+//        super.onCleared()
+//        handler.removeCallbacks(updateAmplitudeRunnable)
+//        myRecorder?.release()
+//        stopPlaying()
+//    }
+
     override fun onCleared() {
         super.onCleared()
+
+        // Remove amplitude updates
         handler.removeCallbacks(updateAmplitudeRunnable)
-        myRecorder?.release()
+
+        // Safely release MediaRecorder
+        myRecorder?.let {
+            try {
+                it.release()
+            } catch (e: Exception) {
+                Log.e("TAG", "Error releasing MediaRecorder: ${e.message}")
+            }
+            myRecorder = null // Nullify to avoid future use
+        }
+
+        // Stop playback and release MediaPlayer
+        try {
+            stopPlaying()
+        } catch (e: Exception) {
+            Log.e("TAG", "Error stopping MediaPlayer: ${e.message}")
+        }
     }
 
     fun getAudioByteArray(): ByteArray {
         val file = File(context.filesDir, "audiorecordtest.3gp")
         return file.readBytes() // Read the file as a byte array
+    }
+
+    fun saveAudioFileFromByteArray(byteArray: ByteArray, fileName: String) {
+        val file = File(context.filesDir, fileName)
+        file.writeBytes(byteArray)
+    }
+
+    fun isFileExists(fileName: String): Boolean {
+        val file = File(context.filesDir, fileName)
+        return file.exists()
     }
 }

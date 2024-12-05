@@ -50,7 +50,7 @@ class PersonViewModel @Inject constructor(
         return personDAO.getPeopleByCategory(categoryId)
     }
 
-    fun addPerson(name: String, description: String, categoryId: Int? = null) {
+    fun addPerson(name: String, description: String, categoryId: Int? = null, audio: ByteArray? = null, imageUri: String? = null) {
         viewModelScope.launch(Dispatchers.IO) {
             val uncategorizedCategoryId = uncategorizedCategoryId.value
             var person:Person
@@ -62,7 +62,7 @@ class PersonViewModel @Inject constructor(
                     throw IllegalStateException("Uncategorized category ID is missing")
                 }
             } else {
-                person = Person(name = name, description = description, categoryId = categoryId)
+                person = Person(name = name, description = description, categoryId = categoryId, audio = audio, imageUri = imageUri)
             }
             personDAO.insert(person)
         }

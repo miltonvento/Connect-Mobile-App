@@ -1,12 +1,19 @@
 package hu.ait.connect.ui.screen
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -52,20 +59,31 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import hu.ait.connect.data.person.Person
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontStyle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.google.accompanist.permissions.rememberMultiplePermissionsState
+import com.google.accompanist.permissions.ExperimentalPermissionsApi
+import coil.compose.AsyncImage
+import hu.ait.connect.ui.screen.AudioRecordViewModel
+import hu.ait.connect.ui.screen.ConfigurationViewModel
+import hu.ait.connect.ui.screen.camera.ComposeFileProvider
 import hu.ait.connect.ui.screen.category.CategoryViewModel
 import hu.ait.connect.ui.screen.person.PersonViewModel
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -111,6 +129,8 @@ fun HomeScreen(
                     }
                 }
             }
+
+
         },
         floatingActionButton = {
             FloatingActionButton(
@@ -155,24 +175,32 @@ fun HomeScreen(
             }
 
             if (showAddDialog) {
-                NewPersonDialog(viewModel,
+                NewPersonDialog(
+                    viewModel,
                     onCancel = {
                         showAddDialog = false
+                    },
+                    onSave = {
+                        showAddDialog = false
                     }
+
                 )
             }
         }
     )
 }
 
+@OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun NewPersonDialog(
     viewModel: PersonViewModel,
-    onCancel: () -> Unit
+    audioRecordViewModel: AudioRecordViewModel = viewModel(factory = AudioRecordViewModel.factory),
+    onCancel: () -> Unit,
+    onSave: () -> Unit
 ) {
     var personName by remember { mutableStateOf("") }
     var additionalDetails by remember { mutableStateOf("") }
-    var recordButtonChecked by remember { mutableStateOf(false) }
+    var audioRecorded by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
     val scrollStateChips = rememberScrollState()
 
@@ -185,6 +213,28 @@ fun NewPersonDialog(
     var showLocationText by remember { mutableStateOf(false) }
     var showNationalityText by remember { mutableStateOf(false) }
     var showOccupationText by remember { mutableStateOf(false) }
+
+    val permissionsState = rememberMultiplePermissionsState(
+        permissions = listOf(
+            android.Manifest.permission.RECORD_AUDIO,
+            android.Manifest.permission.CAMERA
+        )
+    )
+
+    var hasImage by remember {
+        mutableStateOf(false)
+    }
+    var imageUri by remember {
+        mutableStateOf<Uri?>(null)
+    }
+    val context = LocalContext.current
+
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture(),
+        onResult = { success ->
+            hasImage = success
+        }
+    )
 
     Dialog(onDismissRequest = {
         onCancel()
@@ -343,55 +393,78 @@ fun NewPersonDialog(
                 )
                 Spacer(modifier = Modifier.height(12.dp))
 
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconToggleButton(
-                        checked = recordButtonChecked,
-                        onCheckedChange = {
-                            recordButtonChecked = it
-                            // Handle speech recognition
-                        }
-                    ) {
-                        Icon(
-                            imageVector = if (recordButtonChecked) Icons.Filled.Stop else Icons.Filled.Mic,
-                            contentDescription = if (recordButtonChecked) "Stop" else "Record",
-                            modifier = Modifier.size(ButtonDefaults.IconSize)
-                        )
+                if (permissionsState.allPermissionsGranted) {
+                    RecordingUI(audioRecordViewModel = audioRecordViewModel,
+                        onAudioRecorded = {audioRecorded = true})
+                } else {
+                    Button(onClick = {
+                        permissionsState.launchMultiplePermissionRequest()
+                    }) {
+                        Text(text = "Request permissions")
                     }
-
-                    Spacer(modifier = Modifier.width(16.dp))
-
-                    Text(
-                        text = "Create voice note",
-                        fontStyle = FontStyle.Italic
-                    )
                 }
 
                 Spacer(modifier = Modifier.width(16.dp))
 
+                if (audioRecorded) {
+                    AudioPlaybackUI(audioRecordViewModel = audioRecordViewModel)
+                }
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(
-                        onClick = {}
-                    ) {
-                        Icon(
-                            Icons.Filled.CameraAlt,
-                            contentDescription = "Add image"
+                    if (permissionsState.allPermissionsGranted) {
+                        IconButton(
+                            onClick = {
+                                val uri = ComposeFileProvider.getImageUri(context)
+                                imageUri = uri
+                                cameraLauncher.launch(uri)
+                            }
+                        ) {
+                            Icon(
+                                Icons.Filled.CameraAlt,
+                                contentDescription = "Add image"
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(16.dp))
+
+                        Text(
+                            text = "Upload Image",
+                            fontStyle = FontStyle.Italic
                         )
+                    } else {
+                        val textToShow = if (permissionsState.shouldShowRationale) {
+                            // If the user has denied the permission but the rationale can be shown,
+                            // then gently explain why the app requires this permission
+                            "RATIONALEXPLANATION The camera is important for this app. Please grant the permission."
+                        } else {
+                            // If it's the first time the user lands on this feature, or the user
+                            // doesn't want to be asked again for this permission, explain that the
+                            // permission is required
+                            "Camera permission required for this feature to be available. " +
+                                    "Please grant the permission"
+                        }
+                        Text(textToShow)
+
+                        Button(onClick = {
+                            permissionsState.launchMultiplePermissionRequest()
+                        }) {
+                            Text("Request permission")
+                        }
                     }
-
-                    Spacer(modifier = Modifier.width(16.dp))
-
-                    Text(
-                        text = "Upload Image",
-                        fontStyle = FontStyle.Italic
+                }
+                Spacer(modifier = Modifier.height(16.dp))
+                if (hasImage && imageUri != null) {
+                    AsyncImage(
+                        model = imageUri,
+                        modifier = Modifier.size(200.dp, 200.dp),
+                        contentDescription = "Selected image",
                     )
                 }
+                Spacer(modifier = Modifier.height(16.dp))
+
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
@@ -399,16 +472,23 @@ fun NewPersonDialog(
                     TextButton(
                         onClick = {
                             viewModel.addPerson(
-                                name = personName,
-                                description = additionalDetails,
-                                categoryId = 3,
+                                    name = personName,
+                                    description = additionalDetails,
 //                                    tags = mapOf(
 //                                        "Nationality" to "",
 //                                        "Gender" to "Male",
 //                                        "Meeting Location" to ""
 //                                    )
+                                    audio = if (audioRecorded) {
+                                        audioRecordViewModel.getAudioByteArray() // Assign audio if recorded
+                                    } else {
+                                        null // Provide null if audio is not recorded
+                                    },
+                                    imageUri = imageUri?.toString() // Save the image URI
                             )
-                            onCancel()
+                            audioRecordViewModel.stopRecording() // Stop recording when saving
+                            audioRecordViewModel.stopPlaying()   // Stop playback when saving
+                            onSave()
                         },
 //                        enabled = personName.isNotEmpty()
                     ) {
@@ -417,6 +497,8 @@ fun NewPersonDialog(
 
                     TextButton(
                         onClick = {
+                            audioRecordViewModel.stopRecording() // Stop recording when canceling
+                            audioRecordViewModel.stopPlaying()   // Stop playback when canceling
                             onCancel()
                         },
                     ) {
@@ -432,10 +514,13 @@ fun NewPersonDialog(
 fun PersonCard(
     person: Person,
     onDeletePerson: (Person) -> Unit,
-    onNavigateToPersonDetails: (String) -> Unit
+    onNavigateToPersonDetails: (String) -> Unit,
+    audioRecordViewModel: AudioRecordViewModel = viewModel(factory = AudioRecordViewModel.factory),
 ) {
     var personId = person.id
     var personName = person.name
+    var personAudio = person.audio
+    val personImageUri = person.imageUri
 
     Card(
         colors = CardDefaults.cardColors(
@@ -461,12 +546,30 @@ fun PersonCard(
             Row(
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                // Display the image if available
+                personImageUri?.let { uri ->
+                    AsyncImage(
+                        model = uri,
+                        contentDescription = "Person Image",
+                        modifier = Modifier
+                            .size(40.dp) // Adjust the size to your preference
+                            .clip(CircleShape) // Optional: make the image circular
+                            .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                    )
+                }
+                Spacer(modifier = Modifier.width(8.dp))
                 Column(
                     modifier = Modifier.weight(1f)
                 ) {
                     Text(
                         text = "$personName",
                     )
+                    if (personAudio != null){
+                        audioRecordViewModel.saveAudioFileFromByteArray(personAudio, "$personId, audio.3gp")
+                        if (audioRecordViewModel.isFileExists("$personId, audio.3gp")) {
+                            AudioPlaybackUI(audioRecordViewModel = audioRecordViewModel, audioFilePath = "$personId, audio.3gp")
+                        }
+                    }
                 }
 
                 Row(
@@ -493,6 +596,137 @@ fun PersonCard(
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+fun AudioVisualizer(amplitude: Int, modifier: Modifier = Modifier) {
+    val bars = 10
+    val maxAmplitude = 32767 // MediaRecorder's max amplitude value
+    val normalizedAmplitude = (amplitude.toFloat() / maxAmplitude * bars).toInt()
+
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        for (i in 1..bars) {
+            val heightFactor = if (i <= normalizedAmplitude) i.toFloat() / bars else 0.2f
+            Box(
+                modifier = Modifier
+                    .width(8.dp)
+                    .height((30.dp * heightFactor).coerceAtLeast(5.dp))
+                    .background(
+                        color = if (i <= normalizedAmplitude) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f),
+                        shape = RoundedCornerShape(50)
+                    )
+            )
+        }
+    }
+}
+
+@Composable
+fun RecordingUI(audioRecordViewModel: AudioRecordViewModel, onAudioRecorded: () -> Unit) {
+    val amplitude by audioRecordViewModel.audioAmplitude.observeAsState(0)
+    var isRecording by remember { mutableStateOf(false) }
+
+    Row( modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ){
+        IconToggleButton(
+            checked = isRecording,
+            onCheckedChange = { checked ->
+                isRecording = checked
+                if (checked) {
+                    audioRecordViewModel.startRecording()
+                } else {
+                    audioRecordViewModel.stopRecording()
+                    onAudioRecorded()
+                }
+            }
+        ) {
+            Icon(
+                imageVector = if (isRecording) Icons.Filled.Stop else Icons.Filled.Mic,
+                contentDescription = if (isRecording) "Stop Recording" else "Start Recording",
+                modifier = Modifier.size(ButtonDefaults.IconSize)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+        Column (){
+            Text(
+                text = if (!isRecording) "Press to Record" else "",
+                style = MaterialTheme.typography.bodyMedium
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            if (isRecording) {
+                // Show visualizer while recording
+                AudioVisualizer(amplitude = amplitude, modifier = Modifier.fillMaxWidth().height(50.dp))
+            }
+        }
+
+    }
+}
+
+@Composable
+fun AudioPlaybackVisualizer(progress: Float, modifier: Modifier = Modifier) {
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(20.dp)
+            .background(MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(4.dp))
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxHeight()
+                .fillMaxWidth(progress)
+                .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(4.dp))
+        )
+    }
+}
+
+@Composable
+fun AudioPlaybackUI(audioRecordViewModel: AudioRecordViewModel, audioFilePath: String? = null) {
+    val playbackProgress by audioRecordViewModel.playbackProgress.observeAsState(0f)
+    val playbackComplete by audioRecordViewModel.playbackComplete.observeAsState(false)
+    var isPlaying by remember { mutableStateOf(false) }
+
+    if (playbackComplete && isPlaying) {
+        // Reset UI when playback completes
+        isPlaying = false
+        audioRecordViewModel.stopPlaying() // Ensure cleanup
+    }
+
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        IconToggleButton(
+            checked = isPlaying,
+            onCheckedChange = { checked ->
+                isPlaying = checked
+                if (checked) {
+                    audioRecordViewModel.startPlaying(audioFilePath)
+                } else {
+                    audioRecordViewModel.stopPlaying()
+                }
+            }
+        ) {
+            Icon(
+                imageVector = if (isPlaying) Icons.Default.Stop else Icons.Default.PlayArrow,
+                contentDescription = if (isPlaying) "Stop Playing" else "Start Playing",
+                modifier = Modifier.size(ButtonDefaults.IconSize)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        if (isPlaying) {
+            AudioPlaybackVisualizer(
+                progress = playbackProgress,
+                modifier = Modifier.fillMaxWidth().height(20.dp)
+            )
         }
     }
 }

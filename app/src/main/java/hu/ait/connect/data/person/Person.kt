@@ -13,4 +13,6 @@ data class Person(
     @ColumnInfo(name = "description") val description:String,
     @ColumnInfo(name = "categoryId") val categoryId: Int,
     @ColumnInfo(name = "tags") val tags:Map<String, Any>? = null,
-    ) : Serializable
+    @ColumnInfo(name = "audio") val audio: ByteArray? = null,
+    @ColumnInfo(name = "imageUri") val imageUri: String? = null // Add this field
+) : Serializable

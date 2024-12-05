@@ -49,12 +49,6 @@ fun CategoryDetailsScreen(
     categoryViewModel: CategoryViewModel = hiltViewModel()
 ) {
 
-    val sampleData = listOf(
-        Pair("John Doe", "Software Engineer"),
-        Pair("Jane Smith", "Product Manager"),
-        Pair("Emily Johnson", "Designer"),
-    )
-
     var category = categoryDetailsViewModel.getCategoryById(categoryId.toInt())
     var people = categoryDetailsViewModel.getPeopleByCategory(categoryId.toInt()).collectAsState(initial = emptyList()).value
 

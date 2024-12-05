@@ -50,17 +50,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CategoryScreen(
+    onNavigateToCategoryDetails: (String) -> Unit,
     navController: NavHostController,
     categoryViewModel: CategoryViewModel = hiltViewModel()
 ) {
     var showAddDialog by rememberSaveable { mutableStateOf(false) }
     var categories = categoryViewModel.getAllCategories().collectAsState(initial = emptyList())
-    var categoryNames = categories.value.map { it.name }
 
     Scaffold(
         topBar = {
@@ -91,7 +90,6 @@ fun CategoryScreen(
             }
         },
         content = { innerpadding ->
-//            val items = listOf("Category 1", "Category 2", "Category 3", "Category 4")
             LazyVerticalGrid(
                 columns = GridCells.Fixed(2), // Two columns
                 modifier = Modifier
@@ -107,10 +105,10 @@ fun CategoryScreen(
                             .fillMaxWidth()
                             .aspectRatio(1f), // Ensures the cards are square
                         colors = CardDefaults.cardColors(containerColor = Color(categories.value[index].color)),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-//                        onClick = {
-//                            navController.navigate("category/${categories.value[index].id}")
-//                        }
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                        onClick = {
+                            onNavigateToCategoryDetails(categories.value[index].id.toString())
+                        }
                     ) {
                         Box(
                             modifier = Modifier.fillMaxSize(),
@@ -232,7 +230,7 @@ fun AdvancedColorPicker(
 
     Column() {
         Text(
-            text = "Adjust Color",
+            text = "Adjust color using slider below:",
             fontStyle = FontStyle.Italic,
             modifier = Modifier.padding(bottom = 8.dp)
         )

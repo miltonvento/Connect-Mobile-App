@@ -27,6 +27,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.currentBackStackEntryAsState
 import hu.ait.connect.ui.screen.assistance.AiAssistanceScreen
+import hu.ait.connect.ui.screen.category.CategoryDetailsScreen
 import hu.ait.connect.ui.screen.category.CategoryScreen
 import hu.ait.connect.ui.screen.category.CategoryViewModel
 import kotlinx.coroutines.launch
@@ -83,7 +84,6 @@ fun ConnectAppNavHost(
                 onNavigateToPersonDetails = { personId ->
                     navController.navigate("persondetails?personId=$personId")
                 },
-
                 )
         }
 
@@ -93,9 +93,18 @@ fun ConnectAppNavHost(
             )
         }
 
+        composable(MainNavigation.CategoryDetailsScreen.route) {
+            CategoryDetailsScreen(
+                navController = navController, categoryId = it.arguments?.getString("categoryId") ?: ""
+            )
+        }
+
         composable(MainNavigation.CategoryScreen.route) {
             CategoryScreen(
-                navController = navController
+                navController = navController,
+                onNavigateToCategoryDetails = { personId ->
+                    navController.navigate("categorydetails?categoryId=$personId")
+                },
             )
         }
 

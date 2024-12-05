@@ -42,7 +42,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -72,7 +71,6 @@ fun PersonDetailsScreen(
     personId: String,
     personViewModel: PersonViewModel = hiltViewModel(),
     configurationViewModel: ConfigurationViewModel = hiltViewModel(),
-    categoryViewModel: CategoryViewModel = hiltViewModel()
 ) {
     val configuration = configurationViewModel.getConfig().collectAsState(initial = null)
     val person = personViewModel.getPersonById(personId.toInt()).collectAsState(initial = null)
@@ -92,7 +90,7 @@ fun PersonDetailsScreen(
                 TopAppBar(
                     title = {
                         Text(
-                            text = "Person Details",
+                            text = "",
                             style = MaterialTheme.typography.titleMedium
                         )
                     },
@@ -159,6 +157,8 @@ fun PersonDetailsScreen(
 
                     TagArea(person.value!!.tags, configuration.value?.taglist)
 
+                    Spacer(Modifier.height(10.dp))
+
                     Text(
                         "Notes",
                         style = MaterialTheme.typography.bodyMedium.copy(
@@ -170,8 +170,8 @@ fun PersonDetailsScreen(
 
                     PersonInfor(personViewModel, person)
 
-                Text("Name: $personName, Description: $personDescription Tags: ${person.value!!.tags}")
-                    Text(person.value.toString())
+//                Text("Name: $personName, Description: $personDescription Tags: ${person.value!!.tags}")
+//                    Text(person.value.toString())
                 }
             }
         )

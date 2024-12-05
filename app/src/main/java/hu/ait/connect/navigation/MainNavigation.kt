@@ -9,9 +9,8 @@ import androidx.compose.ui.graphics.vector.ImageVector
 
 sealed class MainNavigation(val route: String, val icon: ImageVector, val label: String) {
     object HomeScreen : MainNavigation("home", Icons.Default.Home, "Home")
-    object PersonDetailsScreen : MainNavigation("persondetails?personId={personId}", Icons.Default.Image, "Person Details") {
-        fun createRoute(personId: String) = "persondetails?personId=$personId"
-    }
+    object PersonDetailsScreen : MainNavigation("persondetails?personId={personId}", Icons.Default.Image, "Person Details")
+    object CategoryDetailsScreen : MainNavigation("categorydetails?categoryId={categoryId}", Icons.Default.Image, "Category Details")
     object CategoryScreen : MainNavigation("category", Icons.Default.Category, "Categories")
     object AiAssistance : MainNavigation("assistance", Icons.Default.ChatBubble, "Assistance")
 }

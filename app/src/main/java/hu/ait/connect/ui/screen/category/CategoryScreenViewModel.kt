@@ -2,6 +2,8 @@ package hu.ait.connect.ui.screen.category
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,6 +21,14 @@ class CategoryViewModel @Inject constructor(
 
     fun getAllCategories(): Flow<List<Category>> {
         return categoryDAO.getAllCategories()
+    }
+
+    fun getCategoryById(categoryId: Int): LiveData<Category?> {
+        val result = MutableLiveData<Category?>()
+        viewModelScope.launch {
+            result.postValue(categoryDAO.getCategoryById(categoryId))
+        }
+        return result
     }
 
     suspend fun insertUncategorizedCategory() {

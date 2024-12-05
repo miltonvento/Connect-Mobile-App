@@ -79,7 +79,9 @@ fun HomeScreen(
     val peopleList = viewModel.getAllPeople().collectAsState(emptyList())
     var showAddDialog by rememberSaveable { mutableStateOf(false) }
 
-    val tabs = listOf("All", "Category 2", "Category 3", "Category 4", "Category 5", "Category 6")
+    var categories = categoryViewModel.getAllCategories().collectAsState(initial = emptyList())
+    var categoryNames = categories.value.map { it.name }
+    val tabs = listOf("All") + categoryNames
     var selectedTabIndex by remember { mutableStateOf(0) }
 
     Scaffold(

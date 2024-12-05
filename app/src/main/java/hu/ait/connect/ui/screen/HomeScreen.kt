@@ -1,6 +1,7 @@
 package hu.ait.connect.ui.screen
 
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateContentSize
@@ -79,20 +80,27 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import coil.compose.AsyncImage
+import hu.ait.connect.ui.screen.AudioRecordViewModel
+import hu.ait.connect.ui.screen.ConfigurationViewModel
 import hu.ait.connect.ui.screen.camera.ComposeFileProvider
+import hu.ait.connect.ui.screen.category.CategoryViewModel
+import hu.ait.connect.ui.screen.person.PersonViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     viewModel: PersonViewModel = hiltViewModel(),
     configurationViewModel: ConfigurationViewModel = hiltViewModel(),
+    categoryViewModel: CategoryViewModel = hiltViewModel(),
     modifier: Modifier = Modifier,
     onNavigateToPersonDetails: (String) -> Unit
 ) {
     val peopleList = viewModel.getAllPeople().collectAsState(emptyList())
     var showAddDialog by rememberSaveable { mutableStateOf(false) }
 
-    val tabs = listOf("All", "Category 2", "Category 3", "Category 4", "Category 5", "Category 6")
+    var categories = categoryViewModel.getAllCategories().collectAsState(initial = emptyList())
+    var categoryNames = categories.value.map { it.name }
+    val tabs = listOf("All") + categoryNames
     var selectedTabIndex by remember { mutableStateOf(0) }
 
     Scaffold(
@@ -465,7 +473,6 @@ fun NewPersonDialog(
                     TextButton(
                         onClick = {
                             viewModel.addPerson(
-                                Person(
                                     name = personName,
                                     description = additionalDetails,
 //                                    tags = mapOf(
@@ -479,7 +486,6 @@ fun NewPersonDialog(
                                         null // Provide null if audio is not recorded
                                     },
                                     imageUri = imageUri?.toString() // Save the image URI
-                                )
                             )
                             audioRecordViewModel.stopRecording() // Stop recording when saving
                             audioRecordViewModel.stopPlaying()   // Stop playback when saving
@@ -702,7 +708,11 @@ fun AudioPlaybackUI(audioRecordViewModel: AudioRecordViewModel, audioFilePath: S
             onCheckedChange = { checked ->
                 isPlaying = checked
                 if (checked) {
-                    audioRecordViewModel.startPlaying(audioFilePath)
+                    if (!audioFilePath.isNullOrEmpty() && audioRecordViewModel.isFileExists(audioFilePath)) {
+                        audioRecordViewModel.startPlaying(audioFilePath)
+                    } else {
+                        Log.e("AudioPlaybackUI", "Invalid or missing audio file path.")
+                    }
                 } else {
                     audioRecordViewModel.stopPlaying()
                 }
@@ -725,21 +735,3 @@ fun AudioPlaybackUI(audioRecordViewModel: AudioRecordViewModel, audioFilePath: S
         }
     }
 }
-
-//@Composable
-//fun CameraScreen() {
-//    var hasImage by remember {
-//        mutableStateOf(false)
-//    }
-//    var imageUri by remember {
-//        mutableStateOf<Uri?>(null)
-//    }
-//    val context = LocalContext.current
-//
-//    val cameraLauncher = rememberLauncherForActivityResult(
-//        contract = ActivityResultContracts.TakePicture(),
-//        onResult = { success ->
-//            hasImage = success
-//        }
-//    )
-//}

@@ -5,17 +5,20 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import hu.ait.connect.data.category.Category
+import hu.ait.connect.data.category.CategoryDAO
 import hu.ait.connect.data.configuration.Configuration
 import hu.ait.connect.data.configuration.ConfigurationDAO
 import hu.ait.connect.data.person.Person
 import hu.ait.connect.data.person.PersonDAO
 
-@Database(entities = [Person::class, Configuration::class], version = 9, exportSchema = false)
+@Database(entities = [Person::class, Configuration::class, Category::class], version = 10, exportSchema = false)
 @TypeConverters(Converters::class) // Register the Converters class
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun personDao(): PersonDAO
     abstract fun configurationDao(): ConfigurationDAO
+    abstract fun categoryDao(): CategoryDAO
 
     companion object {
         @Volatile

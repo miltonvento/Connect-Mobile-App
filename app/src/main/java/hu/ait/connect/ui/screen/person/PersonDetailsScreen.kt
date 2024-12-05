@@ -1,4 +1,4 @@
-package hu.ait.connect.ui.screen
+package hu.ait.connect.ui.screen.person
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -60,6 +60,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import hu.ait.connect.R
 import hu.ait.connect.data.person.Person
+import hu.ait.connect.ui.screen.ConfigurationViewModel
+import hu.ait.connect.ui.screen.category.CategoryViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,7 +70,7 @@ fun PersonDetailsScreen(
     navController: NavHostController,
     personId: String,
     personViewModel: PersonViewModel = hiltViewModel(),
-    configurationViewModel: ConfigurationViewModel = hiltViewModel()
+    configurationViewModel: ConfigurationViewModel = hiltViewModel(),
 ) {
     val configuration = configurationViewModel.getConfig().collectAsState(initial = null)
     val person = personViewModel.getPersonById(personId.toInt()).collectAsState(initial = null)
@@ -87,7 +90,7 @@ fun PersonDetailsScreen(
                 TopAppBar(
                     title = {
                         Text(
-                            text = "Person Details",
+                            text = "",
                             style = MaterialTheme.typography.titleMedium
                         )
                     },
@@ -154,6 +157,8 @@ fun PersonDetailsScreen(
 
                     TagArea(person.value!!.tags, configuration.value?.taglist)
 
+                    Spacer(Modifier.height(10.dp))
+
                     Text(
                         "Notes",
                         style = MaterialTheme.typography.bodyMedium.copy(
@@ -166,7 +171,7 @@ fun PersonDetailsScreen(
                     PersonInfor(personViewModel, person)
 
 //                Text("Name: $personName, Description: $personDescription Tags: ${person.value!!.tags}")
-//                    Text(configuration.value?.taglist.toString())
+//                    Text(person.value.toString())
                 }
             }
         )

@@ -10,7 +10,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -18,23 +17,37 @@ import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
 import hu.ait.connect.navigation.MainNavigation
 import hu.ait.connect.ui.screen.HomeScreen
-import hu.ait.connect.ui.screen.PersonDetailsScreen
+import hu.ait.connect.ui.screen.person.PersonDetailsScreen
 import hu.ait.connect.ui.theme.ConnectTheme
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.currentBackStackEntryAsState
-import hu.ait.connect.ui.screen.AiAssistanceScreen
-import hu.ait.connect.ui.screen.CategoryScreen
+import hu.ait.connect.ui.screen.assistance.AiAssistanceScreen
+import hu.ait.connect.ui.screen.category.CategoryDetailsScreen
+import hu.ait.connect.ui.screen.category.CategoryScreen
+import hu.ait.connect.ui.screen.category.CategoryViewModel
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        lateinit var categoryViewModel: CategoryViewModel
+
+            // Get the CategoryViewModel using ViewModelProvider
+            categoryViewModel = ViewModelProvider(this)[CategoryViewModel::class.java]
+
+            // Ensure the uncategorized category is inserted
+            lifecycleScope.launch {
+                categoryViewModel.insertUncategorizedCategory()
+            }
+
         setContent {
             ConnectTheme {
                 val navController = rememberNavController()
@@ -51,6 +64,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+
     }
 }
 
@@ -70,7 +84,6 @@ fun ConnectAppNavHost(
                 onNavigateToPersonDetails = { personId ->
                     navController.navigate("persondetails?personId=$personId")
                 },
-
                 )
         }
 
@@ -80,9 +93,18 @@ fun ConnectAppNavHost(
             )
         }
 
+        composable(MainNavigation.CategoryDetailsScreen.route) {
+            CategoryDetailsScreen(
+                navController = navController, categoryId = it.arguments?.getString("categoryId") ?: ""
+            )
+        }
+
         composable(MainNavigation.CategoryScreen.route) {
             CategoryScreen(
-                navController = navController
+                navController = navController,
+                onNavigateToCategoryDetails = { personId ->
+                    navController.navigate("categorydetails?categoryId=$personId")
+                },
             )
         }
 

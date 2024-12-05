@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ConfigurationDAO {
-    @Query("SELECT * FROM configurationtable WHERE id = 1")
+    @Query("SELECT * FROM configuration_table WHERE id = 1")
     fun getConfiguration() : Flow<Configuration>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

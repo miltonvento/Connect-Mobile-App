@@ -3,9 +3,8 @@ package hu.ait.connect.ui.screen
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
-import hu.ait.connect.data.Configuration
-import hu.ait.connect.data.ConfigurationDAO
-import hu.ait.connect.data.Person
+import hu.ait.connect.data.configuration.Configuration
+import hu.ait.connect.data.configuration.ConfigurationDAO
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch

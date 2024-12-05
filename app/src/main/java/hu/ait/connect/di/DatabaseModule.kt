@@ -7,8 +7,8 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import hu.ait.connect.data.AppDatabase
-import hu.ait.connect.data.PersonDAO
-import hu.ait.connect.data.ConfigurationDAO
+import hu.ait.connect.data.person.PersonDAO
+import hu.ait.connect.data.configuration.ConfigurationDAO
 import javax.inject.Singleton
 
 @InstallIn(SingletonComponent::class)

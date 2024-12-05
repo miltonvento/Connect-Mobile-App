@@ -5,6 +5,10 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import hu.ait.connect.data.configuration.Configuration
+import hu.ait.connect.data.configuration.ConfigurationDAO
+import hu.ait.connect.data.person.Person
+import hu.ait.connect.data.person.PersonDAO
 
 @Database(entities = [Person::class, Configuration::class], version = 9, exportSchema = false)
 @TypeConverters(Converters::class) // Register the Converters class

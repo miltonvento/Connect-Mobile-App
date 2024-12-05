@@ -1,4 +1,4 @@
-package hu.ait.connect.data
+package hu.ait.connect.data.person
 
 import androidx.room.Dao
 import androidx.room.Delete

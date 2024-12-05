@@ -2,12 +2,11 @@ package hu.ait.connect.ui.screen
 
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
-import hu.ait.connect.data.Person
+import hu.ait.connect.data.person.Person
 import javax.inject.Inject
 
 @HiltViewModel

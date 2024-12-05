@@ -1,4 +1,4 @@
-package hu.ait.connect.data
+package hu.ait.connect.data.person
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity

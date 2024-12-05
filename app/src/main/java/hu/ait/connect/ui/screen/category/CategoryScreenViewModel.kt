@@ -35,11 +35,11 @@ class CategoryViewModel @Inject constructor(
             ?: throw IllegalStateException("Uncategorized category not found")
     }
 
-//    fun addCategory(categoryName: String, onComplete: () -> Unit) {
-//        viewModelScope.launch {
-//            val category = Category(name = categoryName)
-//            categoryDAO.insertCategory(category)
-//            onComplete()
-//        }
-//    }
+    fun addCategory(categoryName: String, categoryColor: Color, onComplete: () -> Unit) {
+        viewModelScope.launch {
+            val category = Category(name = categoryName, color = categoryColor.toArgb())
+            categoryDAO.insert(category)
+            onComplete()
+        }
+    }
 }

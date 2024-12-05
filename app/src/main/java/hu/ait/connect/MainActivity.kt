@@ -23,15 +23,30 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.runtime.getValue
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.currentBackStackEntryAsState
 import hu.ait.connect.ui.screen.assistance.AiAssistanceScreen
 import hu.ait.connect.ui.screen.category.CategoryScreen
+import hu.ait.connect.ui.screen.category.CategoryViewModel
+import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        lateinit var categoryViewModel: CategoryViewModel
+
+            // Get the CategoryViewModel using ViewModelProvider
+            categoryViewModel = ViewModelProvider(this)[CategoryViewModel::class.java]
+
+            // Ensure the uncategorized category is inserted
+            lifecycleScope.launch {
+                categoryViewModel.insertUncategorizedCategory()
+            }
+
         setContent {
             ConnectTheme {
                 val navController = rememberNavController()
@@ -48,6 +63,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+
     }
 }
 

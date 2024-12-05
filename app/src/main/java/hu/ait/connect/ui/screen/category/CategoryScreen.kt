@@ -1,16 +1,22 @@
 package hu.ait.connect.ui.screen.category
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -22,6 +28,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -31,10 +38,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -48,6 +59,8 @@ fun CategoryScreen(
     categoryViewModel: CategoryViewModel = hiltViewModel()
 ) {
     var showAddDialog by rememberSaveable { mutableStateOf(false) }
+    var categories = categoryViewModel.getAllCategories().collectAsState(initial = emptyList())
+    var categoryNames = categories.value.map { it.name }
 
     Scaffold(
         topBar = {
@@ -79,34 +92,44 @@ fun CategoryScreen(
         },
         content = { innerpadding ->
 //            val items = listOf("Category 1", "Category 2", "Category 3", "Category 4")
-//            LazyVerticalGrid(
-//                columns = GridCells.Fixed(2), // Two columns
-//                modifier = Modifier
-//                    .padding(innerpadding)
-//                    .fillMaxSize(),
-//                contentPadding = PaddingValues(16.dp), // Padding around the grid
-//                horizontalArrangement = Arrangement.spacedBy(16.dp), // Space between columns
-//                verticalArrangement = Arrangement.spacedBy(16.dp) // Space between rows
-//            ) {
-//                items(items.size) { index ->
-//                    Card(
-//                        modifier = Modifier
-//                            .fillMaxWidth()
-//                            .aspectRatio(1f), // Ensures the cards are square
-//                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-//                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
-//                    ) {
-//                        Text(
-//                            text = items[index],
-//                            style = MaterialTheme.typography.bodyLarge,
-//                            modifier = Modifier
-//                                .padding(16.dp)
-//                                .fillMaxSize()
-//                        )
-//                    }
-//                }
-//
-//            }
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2), // Two columns
+                modifier = Modifier
+                    .padding(innerpadding)
+                    .fillMaxSize(),
+                contentPadding = PaddingValues(16.dp), // Padding around the grid
+                horizontalArrangement = Arrangement.spacedBy(16.dp), // Space between columns
+                verticalArrangement = Arrangement.spacedBy(16.dp) // Space between rows
+            ) {
+                items(categories.value.size) { index ->
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .aspectRatio(1f), // Ensures the cards are square
+                        colors = CardDefaults.cardColors(containerColor = Color(categories.value[index].color)),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+//                        onClick = {
+//                            navController.navigate("category/${categories.value[index].id}")
+//                        }
+                    ) {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = categories.value[index].name,
+                                style = MaterialTheme.typography.bodyLarge,
+                                modifier = Modifier
+                                    .padding(16.dp)
+                                    .fillMaxSize()
+                            )
+                        }
+
+
+                    }
+                }
+
+            }
             if (showAddDialog) {
                 AddCategoryDialog(
                     categoryViewModel,
@@ -119,9 +142,8 @@ fun CategoryScreen(
                 modifier = Modifier
                     .padding(innerpadding)
             ) {
-                var categories = categoryViewModel.getAllCategories().collectAsState(initial = null)
-                Text("Categories")
-                Text("Categories: $categories")
+//                Text("Categories")
+//                Text("Categories: ${categoryNames}")
             }
         }
     )
@@ -132,6 +154,9 @@ fun AddCategoryDialog(
     viewModel: CategoryViewModel,
     onCancel: () -> Unit
 ) {
+    var categoryName by remember { mutableStateOf("") }
+    var selectedColor by remember { mutableStateOf<Color>(Color.LightGray) }
+
     Dialog(onDismissRequest = {
         onCancel()
     }) {
@@ -151,15 +176,19 @@ fun AddCategoryDialog(
                 OutlinedTextField(
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text("Category Name") },
-                    value = "",
-                    onValueChange = { },
+                    value = categoryName,
+                    onValueChange = { categoryName = it },
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
                 ) {
                     TextButton(
-                        onClick = {}
+                        onClick = {
+                            viewModel.addCategory(categoryName = categoryName, categoryColor = selectedColor) {
+                                onCancel()
+                            }
+                        }
                     ) {
                         Text("Save")
                     }
@@ -171,7 +200,63 @@ fun AddCategoryDialog(
                         Text("Cancel")
                     }
                 }
+                    Text(
+                        text = ("Selected Color"),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(20.dp)
+                            .background(selectedColor),
+//                        color = MaterialTheme.colorScheme.primaryContainer
+                    )
+                Spacer(modifier = Modifier.height(16.dp))
+                    AdvancedColorPicker(
+                        onColorChanged = { color ->
+                            selectedColor = color
+                        },
+                    )
             }
         }
     }
 }
+
+@Composable
+fun AdvancedColorPicker(
+    onColorChanged: (Color) -> Unit
+) {
+    var hue by remember { mutableStateOf(0f) } // Hue 0-360
+    var saturation by remember { mutableStateOf(0.5f) } // Saturation 0-1
+    var lightness by remember { mutableStateOf(0.5f) } // Lightness 0-1
+
+    val selectedColor = Color.hsl(hue, saturation, lightness)
+    onColorChanged(selectedColor)
+
+    Column() {
+        Text(
+            text = "Adjust Color",
+            fontStyle = FontStyle.Italic,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        SliderWithLabel(
+            value = hue,
+            valueRange = 0f..360f,
+            onValueChange = { hue = it }
+        )
+    }
+}
+
+@Composable
+fun SliderWithLabel(
+    value: Float,
+    valueRange: ClosedFloatingPointRange<Float>,
+    onValueChange: (Float) -> Unit
+) {
+    Column(modifier = Modifier.padding(vertical = 8.dp)) {
+        Slider(
+            value = value,
+            onValueChange = onValueChange,
+            valueRange = valueRange,
+            modifier = Modifier.fillMaxWidth()
+        )
+    }
+}
+

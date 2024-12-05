@@ -80,12 +80,6 @@ fun PersonDetailsScreen(
     var personDescription by rememberSaveable { mutableStateOf("") }
     var cornerRadius = 20
 
-    val coroutineScope = rememberCoroutineScope()
-
-    coroutineScope.launch {
-        categoryViewModel.insertUncategorizedCategory()
-    }
-
     if (person.value == null) {
         Text(text = "Loading person details...")
 

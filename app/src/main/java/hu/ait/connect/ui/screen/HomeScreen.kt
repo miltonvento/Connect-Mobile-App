@@ -61,14 +61,18 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.text.font.FontStyle
+import hu.ait.connect.ui.screen.category.CategoryViewModel
 import hu.ait.connect.ui.screen.person.PersonViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     viewModel: PersonViewModel = hiltViewModel(),
     configurationViewModel: ConfigurationViewModel = hiltViewModel(),
+    categoryViewModel: CategoryViewModel = hiltViewModel(),
     modifier: Modifier = Modifier,
     onNavigateToPersonDetails: (String) -> Unit
 ) {
@@ -105,8 +109,6 @@ fun HomeScreen(
                     }
                 }
             }
-
-
         },
         floatingActionButton = {
             FloatingActionButton(
@@ -397,7 +399,7 @@ fun NewPersonDialog(
                             viewModel.addPerson(
                                 name = personName,
                                 description = additionalDetails,
-//                                categoryId = 3,
+                                categoryId = 3,
 //                                    tags = mapOf(
 //                                        "Nationality" to "",
 //                                        "Gender" to "Male",

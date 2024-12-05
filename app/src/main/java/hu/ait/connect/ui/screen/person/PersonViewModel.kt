@@ -19,7 +19,6 @@ import javax.inject.Inject
 @HiltViewModel
 class PersonViewModel @Inject constructor(
     private val personDAO: PersonDAO,
-//    private val categoryViewModel: CategoryViewModel,
     categoryDAO: CategoryDAO
 ) : ViewModel() {
 

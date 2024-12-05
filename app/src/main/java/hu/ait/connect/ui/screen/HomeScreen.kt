@@ -7,8 +7,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.calculateEndPadding
-import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -51,7 +49,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
-import hu.ait.connect.data.Person
+import hu.ait.connect.data.person.Person
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.filled.CameraAlt
@@ -61,14 +59,10 @@ import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.IconToggleButton
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
-import androidx.compose.ui.layout.BeyondBoundsLayout
 import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.style.ResolvedTextDirection
-import androidx.compose.ui.unit.LayoutDirection
-import hu.ait.connect.data.Configuration
+import hu.ait.connect.ui.screen.person.PersonViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -214,7 +208,7 @@ fun NewPersonDialog(
 
                 Row(
                     modifier = Modifier.horizontalScroll(scrollState)
-                )  {
+                ) {
                     AssistChip(
                         onClick = { showLocationTextInput = true },
                         label = { Text("Meeting Location") },
@@ -255,7 +249,7 @@ fun NewPersonDialog(
                 if (showLocationTextInput) {
                     OutlinedTextField(
                         modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Meeting Location")},
+                        label = { Text("Meeting Location") },
                         value = "$location",
                         onValueChange = { location = it },
                         trailingIcon = {
@@ -272,7 +266,7 @@ fun NewPersonDialog(
                 if (showNationalityTextInput) {
                     OutlinedTextField(
                         modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Nationality")},
+                        label = { Text("Nationality") },
                         value = "$nationality",
                         onValueChange = { nationality = it },
                         trailingIcon = {
@@ -289,7 +283,7 @@ fun NewPersonDialog(
                 if (showOccupationTextInput) {
                     OutlinedTextField(
                         modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Occupation")},
+                        label = { Text("Occupation") },
                         value = "$occupation",
                         onValueChange = { occupation = it },
                         trailingIcon = {
@@ -305,7 +299,7 @@ fun NewPersonDialog(
 
                 Row(
                     modifier = Modifier.horizontalScroll(scrollStateChips)
-                ){
+                ) {
                     if (showLocationText) {
                         AssistChip(
                             onClick = { },
@@ -333,7 +327,7 @@ fun NewPersonDialog(
 
                 OutlinedTextField(
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("Additional Details")},
+                    label = { Text("Additional Details") },
                     value = "$additionalDetails",
                     onValueChange = { additionalDetails = it },
 //                    isError = personName.isBlank(),
@@ -346,9 +340,10 @@ fun NewPersonDialog(
                 Spacer(modifier = Modifier.height(12.dp))
 
 
-                Row( modifier = Modifier.fillMaxWidth(),
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
-                ){
+                ) {
                     IconToggleButton(
                         checked = recordButtonChecked,
                         onCheckedChange = {
@@ -370,7 +365,7 @@ fun NewPersonDialog(
                         fontStyle = FontStyle.Italic
                     )
                 }
-              
+
                 Spacer(modifier = Modifier.width(16.dp))
 
                 Row(
@@ -388,8 +383,10 @@ fun NewPersonDialog(
 
                     Spacer(modifier = Modifier.width(16.dp))
 
-                    Text(text = "Upload Image",
-                        fontStyle = FontStyle.Italic)
+                    Text(
+                        text = "Upload Image",
+                        fontStyle = FontStyle.Italic
+                    )
                 }
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -398,15 +395,14 @@ fun NewPersonDialog(
                     TextButton(
                         onClick = {
                             viewModel.addPerson(
-                                Person(
-                                    name = personName,
-                                    description = additionalDetails,
+                                name = personName,
+                                description = additionalDetails,
+//                                categoryId = 3,
 //                                    tags = mapOf(
 //                                        "Nationality" to "",
 //                                        "Gender" to "Male",
 //                                        "Meeting Location" to ""
 //                                    )
-                                )
                             )
                             onCancel()
                         },

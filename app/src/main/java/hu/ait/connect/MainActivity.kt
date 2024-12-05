@@ -10,7 +10,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -18,17 +17,15 @@ import androidx.navigation.compose.rememberNavController
 import dagger.hilt.android.AndroidEntryPoint
 import hu.ait.connect.navigation.MainNavigation
 import hu.ait.connect.ui.screen.HomeScreen
-import hu.ait.connect.ui.screen.PersonDetailsScreen
+import hu.ait.connect.ui.screen.person.PersonDetailsScreen
 import hu.ait.connect.ui.theme.ConnectTheme
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.runtime.getValue
 import androidx.navigation.compose.currentBackStackEntryAsState
-import hu.ait.connect.ui.screen.AiAssistanceScreen
-import hu.ait.connect.ui.screen.CategoryScreen
+import hu.ait.connect.ui.screen.assistance.AiAssistanceScreen
+import hu.ait.connect.ui.screen.category.CategoryScreen
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {

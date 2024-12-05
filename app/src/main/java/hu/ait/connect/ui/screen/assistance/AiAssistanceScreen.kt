@@ -1,4 +1,4 @@
-package hu.ait.connect.ui.screen
+package hu.ait.connect.ui.screen.assistance
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController

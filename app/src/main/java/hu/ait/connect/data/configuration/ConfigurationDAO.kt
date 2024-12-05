@@ -1,7 +1,6 @@
-package hu.ait.connect.data
+package hu.ait.connect.data.configuration
 
 import androidx.room.Dao
-import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -10,7 +9,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ConfigurationDAO {
-    @Query("SELECT * FROM configurationtable WHERE id = 1")
+    @Query("SELECT * FROM configuration_table WHERE id = 1")
     fun getConfiguration() : Flow<Configuration>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)

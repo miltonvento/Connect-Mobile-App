@@ -395,7 +395,7 @@ fun NewPersonDialog(
 
                 if (permissionsState.allPermissionsGranted) {
                     RecordingUI(audioRecordViewModel = audioRecordViewModel,
-                        onAudioRecorded = {audioRecorded = true})
+                        onAudioRecorded = { audioRecorded = true })
                 } else {
                     Button(onClick = {
                         permissionsState.launchMultiplePermissionRequest()
@@ -472,19 +472,20 @@ fun NewPersonDialog(
                     TextButton(
                         onClick = {
                             viewModel.addPerson(
-                                    name = personName,
-                                    description = additionalDetails,
+                                name = personName,
+                                description = additionalDetails,
+//                                categoryId = 3,
 //                                    tags = mapOf(
 //                                        "Nationality" to "",
 //                                        "Gender" to "Male",
 //                                        "Meeting Location" to ""
 //                                    )
-                                    audio = if (audioRecorded) {
-                                        audioRecordViewModel.getAudioByteArray() // Assign audio if recorded
-                                    } else {
-                                        null // Provide null if audio is not recorded
-                                    },
-                                    imageUri = imageUri?.toString() // Save the image URI
+                                audio = if (audioRecorded) {
+                                    audioRecordViewModel.getAudioByteArray() // Assign audio if recorded
+                                } else {
+                                    null // Provide null if audio is not recorded
+                                },
+                                imageUri = imageUri?.toString() // Save the image URI
                             )
                             audioRecordViewModel.stopRecording() // Stop recording when saving
                             audioRecordViewModel.stopPlaying()   // Stop playback when saving
@@ -564,10 +565,16 @@ fun PersonCard(
                     Text(
                         text = "$personName",
                     )
-                    if (personAudio != null){
-                        audioRecordViewModel.saveAudioFileFromByteArray(personAudio, "$personId, audio.3gp")
+                    if (personAudio != null) {
+                        audioRecordViewModel.saveAudioFileFromByteArray(
+                            personAudio,
+                            "$personId, audio.3gp"
+                        )
                         if (audioRecordViewModel.isFileExists("$personId, audio.3gp")) {
-                            AudioPlaybackUI(audioRecordViewModel = audioRecordViewModel, audioFilePath = "$personId, audio.3gp")
+                            AudioPlaybackUI(
+                                audioRecordViewModel = audioRecordViewModel,
+                                audioFilePath = "$personId, audio.3gp"
+                            )
                         }
                     }
                 }
@@ -632,9 +639,10 @@ fun RecordingUI(audioRecordViewModel: AudioRecordViewModel, onAudioRecorded: () 
     val amplitude by audioRecordViewModel.audioAmplitude.observeAsState(0)
     var isRecording by remember { mutableStateOf(false) }
 
-    Row( modifier = Modifier.fillMaxWidth(),
+    Row(
+        modifier = Modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
-    ){
+    ) {
         IconToggleButton(
             checked = isRecording,
             onCheckedChange = { checked ->
@@ -655,7 +663,7 @@ fun RecordingUI(audioRecordViewModel: AudioRecordViewModel, onAudioRecorded: () 
         }
 
         Spacer(modifier = Modifier.height(16.dp))
-        Column (){
+        Column() {
             Text(
                 text = if (!isRecording) "Press to Record" else "",
                 style = MaterialTheme.typography.bodyMedium
@@ -665,7 +673,12 @@ fun RecordingUI(audioRecordViewModel: AudioRecordViewModel, onAudioRecorded: () 
 
             if (isRecording) {
                 // Show visualizer while recording
-                AudioVisualizer(amplitude = amplitude, modifier = Modifier.fillMaxWidth().height(50.dp))
+                AudioVisualizer(
+                    amplitude = amplitude,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp)
+                )
             }
         }
 
@@ -725,7 +738,9 @@ fun AudioPlaybackUI(audioRecordViewModel: AudioRecordViewModel, audioFilePath: S
         if (isPlaying) {
             AudioPlaybackVisualizer(
                 progress = playbackProgress,
-                modifier = Modifier.fillMaxWidth().height(20.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(20.dp)
             )
         }
     }

@@ -1,5 +1,6 @@
 package hu.ait.connect.ui.screen.category
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -44,12 +45,15 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import hu.ait.connect.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -115,11 +119,13 @@ fun CategoryScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Text(
+
                                 text = categories.value[index].name,
                                 style = MaterialTheme.typography.bodyLarge,
                                 modifier = Modifier
                                     .padding(16.dp)
-                                    .fillMaxSize()
+                                    .align(Alignment.TopCenter)
+//                                    .fillMaxSize()
                             )
                         }
 
@@ -134,14 +140,6 @@ fun CategoryScreen(
                     onCancel = {
                         showAddDialog = false
                     })
-            }
-
-            Column(
-                modifier = Modifier
-                    .padding(innerpadding)
-            ) {
-//                Text("Categories")
-//                Text("Categories: ${categoryNames}")
             }
         }
     )

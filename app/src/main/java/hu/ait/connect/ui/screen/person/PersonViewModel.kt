@@ -57,7 +57,7 @@ class PersonViewModel @Inject constructor(
 
             if (categoryId == null) {
                 if (uncategorizedCategoryId != null) {
-                    person = Person(name = name, description = description, categoryId = uncategorizedCategoryId)
+                    person = Person(name = name, description = description, categoryId = uncategorizedCategoryId, audio = audio, imageUri = imageUri)
                 } else {
                     throw IllegalStateException("Uncategorized category ID is missing")
                 }

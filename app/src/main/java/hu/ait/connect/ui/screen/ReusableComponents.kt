@@ -1,10 +1,12 @@
 package hu.ait.connect.ui.screen
 
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.border
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
@@ -26,7 +28,9 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -35,10 +39,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import hu.ait.connect.data.category.Category
+import hu.ait.connect.ui.screen.category.CategoryViewModel
+import hu.ait.connect.ui.screen.category.SliderWithLabel
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -48,7 +56,7 @@ fun TagArea(
     borderColor: Int? = null
 ) {
 
-    if (tags == null || tags.isEmpty()){
+    if (tags == null || tags.isEmpty()) {
         return
     }
 
@@ -77,7 +85,9 @@ fun TagArea(
                             )
                         },
                         colors = AssistChipDefaults.assistChipColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
-                        border = BorderStroke(1.dp, borderColor?.let { Color(it) } ?: Color.Transparent)
+                        border = BorderStroke(
+                            1.dp,
+                            borderColor?.let { Color(it) } ?: Color.Transparent)
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                 }
@@ -125,10 +135,15 @@ fun CategoriesDropdown(
     list: List<Category>,
     preselected: String,
     onSelectionChanged: (myData: Category) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    categoryViewModel: CategoryViewModel
 ) {
+
     var selected by remember { mutableStateOf(preselected) }
     var expanded by remember { mutableStateOf(false) }
+    var addCategory by remember { mutableStateOf(false) }
+    var categoryName by remember { mutableStateOf("") }
+    var selectedColor by remember { mutableStateOf<Color>(Color.LightGray) }
 
     OutlinedCard(
         modifier = modifier.clickable {
@@ -154,24 +169,129 @@ fun CategoriesDropdown(
                 onDismissRequest = { expanded = false },
                 modifier = Modifier.fillMaxWidth(0.70f)
             ) {
-                list.forEach { listEntry ->
+                if (!addCategory) {
+                    list.forEach { listEntry ->
+                        DropdownMenuItem(
+                            onClick = {
+                                selected = listEntry.name
+                                expanded = false
+                                onSelectionChanged(listEntry)
+                            },
+                            text = {
+                                Text(
+                                    text = listEntry.name,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .align(Alignment.Start)
+                                        .padding(0.dp)
+                                )
+                            },
+                        )
+                    }
+
                     DropdownMenuItem(
                         onClick = {
-                            selected = listEntry.name
-                            expanded = false
-                            onSelectionChanged(listEntry)
+                            addCategory = true
+                            expanded = false // Close the dropdown when the button is clicked
                         },
                         text = {
-                            Text(
-                                text = listEntry.name,
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .align(Alignment.Start)
-                            )
-                        },
+                            TextButton(
+                                onClick = {
+                                    addCategory = true
+                                },
+                                modifier = Modifier.padding(0.dp)
+                            ) {
+                                Text(
+                                    text = "Add category",
+                                    style = TextStyle(
+                                        fontSize = 14.sp
+                                    )
+                                )
+                            }
+                        }
+
                     )
-                }
+
+                } else
+                    Column(
+                    ) {
+                        OutlinedTextField(
+                            modifier = Modifier.fillMaxWidth(),
+                            label = { Text("Category Name") },
+                            value = categoryName,
+                            onValueChange = {
+                                categoryName = it
+                                selected = categoryName
+                            },
+                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.End
+                        ) {
+                            TextButton(
+                                onClick = {
+                                    categoryViewModel.addCategory(
+                                        categoryName = categoryName,
+                                        categoryColor = selectedColor
+                                    ) {
+                                        newCategory ->
+                                        onSelectionChanged(newCategory)
+                                        addCategory = false
+                                    }
+                                },
+                                enabled = categoryName.isNotEmpty()
+                            ) {
+                                Text("Save")
+                            }
+                            TextButton(
+                                onClick = {
+                                    addCategory = false
+                                },
+                            ) {
+                                Text("Cancel")
+                            }
+                        }
+                        Text(
+                            text = ("Selected Color"),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(20.dp)
+                                .background(selectedColor),
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        AdvancedColorPicker(
+                            onColorChanged = { color ->
+                                selectedColor = color
+                            },
+                        )
+                    }
             }
+
         }
+    }
+}
+
+@Composable
+fun AdvancedColorPicker(
+    onColorChanged: (Color) -> Unit
+) {
+    var hue by remember { mutableStateOf(0f) } // Hue 0-360
+    var saturation by remember { mutableStateOf(0.5f) } // Saturation 0-1
+    var lightness by remember { mutableStateOf(0.5f) } // Lightness 0-1
+
+    val selectedColor = Color.hsl(hue, saturation, lightness)
+    onColorChanged(selectedColor)
+
+    Column() {
+        Text(
+            text = "Adjust color using slider below:",
+            fontStyle = FontStyle.Italic,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
+        SliderWithLabel(
+            value = hue,
+            valueRange = 0f..360f,
+            onValueChange = { hue = it }
+        )
     }
 }

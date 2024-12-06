@@ -207,7 +207,8 @@ fun PersonDetailsScreen(
                     }
 
                     PersonInfor(personViewModel, person)
-//                      Text(person.value.toString())
+                    Text(person.value.toString())
+
                 }
             }
         )

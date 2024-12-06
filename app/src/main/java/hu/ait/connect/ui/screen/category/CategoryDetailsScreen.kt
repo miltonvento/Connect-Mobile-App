@@ -46,6 +46,7 @@ fun CategoryDetailsScreen(
     navController: NavHostController,
     categoryId: String,
     categoryDetailsViewModel: CategoryDetailsViewModel = hiltViewModel(),
+    categoryViewModel: CategoryViewModel = hiltViewModel()
 ) {
 
     var category = categoryDetailsViewModel.getCategoryById(categoryId.toInt())
@@ -75,17 +76,19 @@ fun CategoryDetailsScreen(
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color(category.color)
                 ),
-//                actions = {
-//                    IconButton(
-//                        onClick = {
-////                            showAddDialog = true
-//                        }
-//                    ) {
-//                        Icon(
-//                            Icons.Filled.AddCircle, contentDescription = "Add people to category"
-//                        )
-//                    }
-//                }
+                actions = {
+                    IconButton(
+                        onClick = {
+                            categoryViewModel.deleteCategory(category)
+                            navController.popBackStack()
+                        }
+                    ) {
+                        Icon(
+                            Icons.Filled.Delete,
+                            contentDescription = "Delete"
+                        )
+                    }
+                }
             )
         }
     ) { paddingValues ->

@@ -2,6 +2,7 @@ package hu.ait.connect.ui.screen.person
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -58,9 +60,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import coil.compose.AsyncImage
 import hu.ait.connect.R
 import hu.ait.connect.data.person.Person
 import hu.ait.connect.ui.screen.ConfigurationViewModel
+import hu.ait.connect.ui.screen.TagArea
 import hu.ait.connect.ui.screen.category.CategoryViewModel
 import kotlinx.coroutines.launch
 
@@ -75,6 +79,7 @@ fun PersonDetailsScreen(
     val configuration = configurationViewModel.getConfig().collectAsState(initial = null)
     val person = personViewModel.getPersonById(personId.toInt()).collectAsState(initial = null)
     var personName by rememberSaveable { mutableStateOf("") }
+    var personImageUri: String?
     var personDescription by rememberSaveable { mutableStateOf("") }
     var cornerRadius = 20
 
@@ -84,6 +89,7 @@ fun PersonDetailsScreen(
     } else {
         personName = person.value!!.name
         personDescription = person.value!!.description
+        personImageUri = person.value!!.imageUri
 
         Scaffold(
             topBar = {
@@ -129,14 +135,26 @@ fun PersonDetailsScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(bottom = 4.dp)
                     ) {
-                        Image(
-                            painter = painterResource(R.drawable.profile_avatar),
-                            contentDescription = "Profile Picture",
-                            modifier = Modifier
-                                .size(100.dp) // Size of the circular image
-                                .clip(RoundedCornerShape(cornerRadius.dp)), // Makes the image circular
-                            contentScale = ContentScale.Crop // Crop to fit inside the circle
-                        )
+                        personImageUri?.let { uri ->
+                            AsyncImage(
+                                model = uri,
+                                contentDescription = "Person Image",
+                                modifier = Modifier
+                                    .size(100.dp) // Size of the circular image
+                                    .clip(RoundedCornerShape(cornerRadius.dp)), // Makes the image circular
+                                contentScale = ContentScale.Crop // Crop to fit inside the circle
+                            )
+                        } ?: run {
+                            Image(
+                                painter = painterResource(R.drawable.profile_avatar),
+                                contentDescription = "Profile Picture",
+                                modifier = Modifier
+                                    .size(100.dp) // Size of the circular image
+                                    .clip(RoundedCornerShape(cornerRadius.dp)), // Makes the image circular
+                                contentScale = ContentScale.Crop // Crop to fit inside the circle
+                            )
+                        }
+
                         Spacer(modifier = Modifier.width(20.dp)) // Space between image and text
                         Text(
                             text = "$personName",
@@ -176,81 +194,6 @@ fun PersonDetailsScreen(
             }
         )
     }
-
-}
-
-@OptIn(ExperimentalLayoutApi::class)
-@Composable
-fun TagArea(
-    tags: Map<String, Any>?,
-    taglist: List<String>? = null
-) {
-    if (tags == null || tags.isEmpty()) {
-        Text("No memory cues added. Click below to add memory cues", fontStyle = FontStyle.Italic)
-        FlowRow(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(2.dp),
-        ) {
-            taglist?.forEach { tag ->
-                if (tag != "") {
-                    AssistChip(
-                        onClick = {},
-                        label = {
-                            Text(
-                                tag.toString(),
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    fontSize = 16.sp,
-                                ),
-                            )
-                        },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Filled.Add,
-                                contentDescription = "$tag",
-                                Modifier.size(AssistChipDefaults.IconSize)
-                            )
-                        }
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                }
-            }
-        }
-        return
-    }
-
-    val scrollState = rememberScrollState()
-
-    Box(
-        modifier = Modifier
-            .height(100.dp)
-            .verticalScroll(scrollState)
-    ) {
-        FlowRow(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(2.dp),
-        ) {
-            tags.forEach { (tag, value) ->
-                if (value != "") {
-                    AssistChip(
-                        onClick = {},
-                        label = {
-                            Text(
-                                value.toString(),
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    fontSize = 16.sp,
-                                ),
-                            )
-                        },
-                        colors = AssistChipDefaults.assistChipColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                }
-            }
-        }
-    }
-
 
 }
 

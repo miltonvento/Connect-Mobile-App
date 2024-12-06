@@ -46,7 +46,6 @@ fun CategoryDetailsScreen(
     navController: NavHostController,
     categoryId: String,
     categoryDetailsViewModel: CategoryDetailsViewModel = hiltViewModel(),
-    categoryViewModel: CategoryViewModel = hiltViewModel()
 ) {
 
     var category = categoryDetailsViewModel.getCategoryById(categoryId.toInt())

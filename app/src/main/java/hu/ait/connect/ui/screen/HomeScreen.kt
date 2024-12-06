@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -60,6 +61,8 @@ import hu.ait.connect.data.person.Person
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.PlayArrow
@@ -72,16 +75,23 @@ import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.input.ImeAction
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import coil.compose.AsyncImage
+import hu.ait.connect.R
 import hu.ait.connect.ui.screen.AudioRecordViewModel
 import hu.ait.connect.ui.screen.ConfigurationViewModel
 import hu.ait.connect.ui.screen.camera.ComposeFileProvider
+import hu.ait.connect.ui.screen.category.CategoryDetailsViewModel
 import hu.ait.connect.ui.screen.category.CategoryViewModel
 import hu.ait.connect.ui.screen.person.PersonViewModel
 
@@ -91,11 +101,15 @@ fun HomeScreen(
     viewModel: PersonViewModel = hiltViewModel(),
     configurationViewModel: ConfigurationViewModel = hiltViewModel(),
     categoryViewModel: CategoryViewModel = hiltViewModel(),
+    categoryDetailsViewModel: CategoryDetailsViewModel = hiltViewModel(),
     modifier: Modifier = Modifier,
     onNavigateToPersonDetails: (String) -> Unit
 ) {
     val peopleList = viewModel.getAllPeople().collectAsState(emptyList())
     var showAddDialog by rememberSaveable { mutableStateOf(false) }
+
+    val configuration = configurationViewModel.getConfig().collectAsState(initial = null)
+    var tagList = configuration.value?.taglist
 
     var categories = categoryViewModel.getAllCategories().collectAsState(initial = emptyList())
     var categoryNames = categories.value.map { it.name }
@@ -161,8 +175,12 @@ fun HomeScreen(
                     )
                 } else {
                     LazyColumn {
-                        items(peopleList.value) { person ->
+                        items(peopleList.value.filter {
+                            if (selectedTabIndex == 0) true
+                            else it.categoryId == categories.value[selectedTabIndex - 1].id
+                        }) { person ->
                             PersonCard(
+                                categoryDetailsViewModel,
                                 person,
                                 onDeletePerson = { person ->
                                     viewModel.deletePerson(person)
@@ -174,8 +192,10 @@ fun HomeScreen(
                 }
             }
 
+
             if (showAddDialog) {
                 NewPersonDialog(
+                    tagList = tagList ?: emptyList(),
                     viewModel,
                     onCancel = {
                         showAddDialog = false
@@ -193,26 +213,31 @@ fun HomeScreen(
 @OptIn(ExperimentalPermissionsApi::class)
 @Composable
 fun NewPersonDialog(
+    tagList: List<String>,
     viewModel: PersonViewModel,
     audioRecordViewModel: AudioRecordViewModel = viewModel(factory = AudioRecordViewModel.factory),
     onCancel: () -> Unit,
     onSave: () -> Unit
 ) {
+    data class TagData(
+        val label: String,
+        var value: String = "",
+        var isEditing: Boolean = false,
+        var isSaved: Boolean = false
+    )
+
+    val tags = remember {
+        mutableStateListOf(
+            tagList.map { TagData(label = it) },
+        )
+    }
+
     var personName by remember { mutableStateOf("") }
+    var isNameValid by remember { mutableStateOf(false) }
     var additionalDetails by remember { mutableStateOf("") }
     var audioRecorded by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
     val scrollStateChips = rememberScrollState()
-
-    var showLocationTextInput by remember { mutableStateOf(false) }
-    var showNationalityTextInput by remember { mutableStateOf(false) }
-    var showOccupationTextInput by remember { mutableStateOf(false) }
-    var location by remember { mutableStateOf("") }
-    var nationality by remember { mutableStateOf("") }
-    var occupation by remember { mutableStateOf("") }
-    var showLocationText by remember { mutableStateOf(false) }
-    var showNationalityText by remember { mutableStateOf(false) }
-    var showOccupationText by remember { mutableStateOf(false) }
 
     val permissionsState = rememberMultiplePermissionsState(
         permissions = listOf(
@@ -257,126 +282,96 @@ fun NewPersonDialog(
                     label = { Text("Name") },
                     value = "$personName",
                     onValueChange = { personName = it },
+                    singleLine = true,
+                    isError = isNameValid && personName.isBlank(),
+                    supportingText = {
+                        if (isNameValid && personName.isBlank()) {
+                            Text(text = "Name is required!", color = Color.Red)
+                        }
+                    }
                 )
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Row(
                     modifier = Modifier.horizontalScroll(scrollState)
                 ) {
-                    AssistChip(
-                        onClick = { showLocationTextInput = true },
-                        label = { Text("Meeting Location") },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Filled.Add,
-                                contentDescription = "Add Meeting Location",
-                                Modifier.size(AssistChipDefaults.IconSize)
+                    tags.forEach { tagListItem ->
+                        tagListItem.forEachIndexed { index, tag ->
+                            AssistChip(
+                                onClick = {
+                                    val updatedList = tagListItem.toMutableList()
+                                    updatedList[index] = tag.copy(isEditing = true)
+                                    val indexInOuterList = tags.indexOf(tagListItem)
+                                    tags[indexInOuterList] = updatedList
+                                },
+                                label = {
+                                    Text(tag.label)
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        Icons.Filled.Add,
+                                        contentDescription = "Add $tag.label",
+                                        Modifier.size(AssistChipDefaults.IconSize)
+                                    )
+                                }
                             )
+                            Spacer(modifier = Modifier.width(16.dp))
                         }
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    AssistChip(
-                        onClick = { showNationalityTextInput = true },
-                        label = { Text("Nationality") },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Filled.Add,
-                                contentDescription = "Add Nationality",
-                                Modifier.size(AssistChipDefaults.IconSize)
-                            )
-                        }
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    AssistChip(
-                        onClick = { showOccupationTextInput = true },
-                        label = { Text("Occupation") },
-                        leadingIcon = {
-                            Icon(
-                                Icons.Filled.Add,
-                                contentDescription = "Add Occupation",
-                                Modifier.size(AssistChipDefaults.IconSize)
-                            )
-                        }
-                    )
+
+
+                    }
                 }
 
-                if (showLocationTextInput) {
-                    OutlinedTextField(
-                        modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Meeting Location") },
-                        value = "$location",
-                        onValueChange = { location = it },
-                        trailingIcon = {
-                            IconButton(onClick = {
-                                showLocationText = true
-                                showLocationTextInput = false
-                            }) {
-                                Icon(Icons.Default.Check, contentDescription = "Save")
-                            }
+                tags.forEach { tagListItem ->
+                    tagListItem.forEachIndexed { index, tag ->
+                        if (tag.isEditing) {
+                            OutlinedTextField(
+                                modifier = Modifier.fillMaxWidth(),
+                                label = { Text(tag.label) },
+                                value = tag.value,
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                                keyboardActions = KeyboardActions(onDone = {
+                                    val updatedList = tagListItem.toMutableList()
+                                    updatedList[index] =
+                                        tag.copy(isEditing = false, isSaved = tag.value != "")
+                                    val indexInOuterList = tags.indexOf(tagListItem)
+                                    tags[indexInOuterList] = updatedList
+                                }),
+                                onValueChange = { newValue ->
+                                    val updatedList = tagListItem.toMutableList()
+                                    updatedList[index] = tag.copy(value = newValue)
+                                    val indexInOuterList = tags.indexOf(tagListItem)
+                                    tags[indexInOuterList] = updatedList
+                                },
+                                trailingIcon = {
+                                    IconButton(onClick = {
+                                        val updatedList = tagListItem.toMutableList()
+                                        updatedList[index] =
+                                            tag.copy(isEditing = false, isSaved = tag.value != "")
+                                        val indexInOuterList = tags.indexOf(tagListItem)
+                                        tags[indexInOuterList] = updatedList
+                                    }) {
+                                        Icon(Icons.Default.Check, contentDescription = "Save")
+                                    }
+                                }
+                            )
                         }
-                    )
-                }
-
-                if (showNationalityTextInput) {
-                    OutlinedTextField(
-                        modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Nationality") },
-                        value = "$nationality",
-                        onValueChange = { nationality = it },
-                        trailingIcon = {
-                            IconButton(onClick = {
-                                showNationalityText = true
-                                showNationalityTextInput = false
-                            }) {
-                                Icon(Icons.Default.Check, contentDescription = "Save")
-                            }
-                        }
-                    )
-                }
-
-                if (showOccupationTextInput) {
-                    OutlinedTextField(
-                        modifier = Modifier.fillMaxWidth(),
-                        label = { Text("Occupation") },
-                        value = "$occupation",
-                        onValueChange = { occupation = it },
-                        trailingIcon = {
-                            IconButton(onClick = {
-                                showOccupationText = true
-                                showOccupationTextInput = false
-                            }) {
-                                Icon(Icons.Default.Check, contentDescription = "Save")
-                            }
-                        }
-                    )
+                    }
                 }
 
                 Row(
                     modifier = Modifier.horizontalScroll(scrollStateChips)
                 ) {
-                    if (showLocationText) {
+                    tags.flatten().filter { it.isSaved }.forEach { tag ->
                         AssistChip(
                             onClick = { },
-                            label = { Text(location) },
-                            colors = AssistChipDefaults.assistChipColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
+                            label = { Text(tag.value) },
+                            colors = AssistChipDefaults.assistChipColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+                            modifier = Modifier.padding(end = 8.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    if (showNationalityText) {
-                        AssistChip(
-                            onClick = { },
-                            label = { Text(nationality) },
-                            colors = AssistChipDefaults.assistChipColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    if (showOccupationText) {
-                        AssistChip(
-                            onClick = { },
-                            label = { Text(occupation) },
-                            colors = AssistChipDefaults.assistChipColors(containerColor = MaterialTheme.colorScheme.secondaryContainer)
-                        )
-                    }
+
                 }
 
                 OutlinedTextField(
@@ -384,12 +379,6 @@ fun NewPersonDialog(
                     label = { Text("Additional Details") },
                     value = "$additionalDetails",
                     onValueChange = { additionalDetails = it },
-//                    isError = personName.isBlank(),
-//                    supportingText = {
-//                        if (personName.isBlank()) {
-//                            Text(text = "name required!", color = Color.Red)
-//                        }
-//                    }
                 )
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -471,25 +460,30 @@ fun NewPersonDialog(
                 ) {
                     TextButton(
                         onClick = {
-                            viewModel.addPerson(
-                                name = personName,
-                                description = additionalDetails,
+                            if (personName.isBlank()) {
+                                isNameValid = true
+                            } else {
+
+                                viewModel.addPerson(
+                                    name = personName,
+                                    description = additionalDetails,
 //                                categoryId = 3,
 //                                    tags = mapOf(
 //                                        "Nationality" to "",
 //                                        "Gender" to "Male",
 //                                        "Meeting Location" to ""
 //                                    )
-                                audio = if (audioRecorded) {
-                                    audioRecordViewModel.getAudioByteArray() // Assign audio if recorded
-                                } else {
-                                    null // Provide null if audio is not recorded
-                                },
-                                imageUri = imageUri?.toString() // Save the image URI
-                            )
-                            audioRecordViewModel.stopRecording() // Stop recording when saving
-                            audioRecordViewModel.stopPlaying()   // Stop playback when saving
-                            onSave()
+                                    audio = if (audioRecorded) {
+                                        audioRecordViewModel.getAudioByteArray() // Assign audio if recorded
+                                    } else {
+                                        null // Provide null if audio is not recorded
+                                    },
+                                    imageUri = imageUri?.toString() // Save the image URI
+                                )
+                                audioRecordViewModel.stopRecording() // Stop recording when saving
+                                audioRecordViewModel.stopPlaying()   // Stop playback when saving
+                                onSave()
+                            }
                         },
 //                        enabled = personName.isNotEmpty()
                     ) {
@@ -513,6 +507,7 @@ fun NewPersonDialog(
 
 @Composable
 fun PersonCard(
+    categoryDetailsViewModel: CategoryDetailsViewModel,
     person: Person,
     onDeletePerson: (Person) -> Unit,
     onNavigateToPersonDetails: (String) -> Unit,
@@ -522,6 +517,8 @@ fun PersonCard(
     var personName = person.name
     var personAudio = person.audio
     val personImageUri = person.imageUri
+
+//    var category = categoryDetailsViewModel.getCategoryById(person.categoryId.toInt())
 
     Card(
         colors = CardDefaults.cardColors(
@@ -553,17 +550,30 @@ fun PersonCard(
                         model = uri,
                         contentDescription = "Person Image",
                         modifier = Modifier
-                            .size(40.dp) // Adjust the size to your preference
-                            .clip(CircleShape) // Optional: make the image circular
-                            .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                            .size(60.dp) // Adjust the size to your preference
+                            .clip(CircleShape), // Optional: make the image circular
+                        contentScale = ContentScale.Crop // Crop to fit inside the circle
+
+                    )
+                } ?: run {
+                    Image(
+                        painter = painterResource(R.drawable.profile_avatar),
+                        contentDescription = "Profile Picture",
+                        modifier = Modifier
+                            .size(60.dp) // Size of the circular image
+                            .clip(CircleShape), // Makes the image circular
+                        contentScale = ContentScale.Crop // Crop to fit inside the circle
                     )
                 }
+
+
                 Spacer(modifier = Modifier.width(8.dp))
                 Column(
                     modifier = Modifier.weight(1f)
                 ) {
                     Text(
                         text = "$personName",
+                        style = MaterialTheme.typography.titleMedium
                     )
                     if (personAudio != null) {
                         audioRecordViewModel.saveAudioFileFromByteArray(
@@ -587,8 +597,7 @@ fun PersonCard(
                         contentDescription = "Delete",
                         modifier = Modifier.clickable {
                             onDeletePerson(person)
-                        },
-                        tint = Color.Red
+                        }
                     )
 
                     IconButton(

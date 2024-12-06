@@ -194,7 +194,7 @@ fun PersonDetailsScreen(
                     Spacer(Modifier.height(5.dp))
 
                     PersonInfor(personViewModel, person)
-//                    Text(person.value.toString())
+                    Text(person.value.toString())
                 }
             }
         )

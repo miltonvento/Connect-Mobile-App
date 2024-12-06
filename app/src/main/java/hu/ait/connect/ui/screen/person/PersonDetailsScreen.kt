@@ -173,7 +173,14 @@ fun PersonDetailsScreen(
                     )
                     Spacer(Modifier.height(5.dp))
 
-                    TagArea(person.value!!.tags, configuration.value?.taglist)
+                    person.value!!.tags ?.let {
+                        TagArea(
+                            person.value!!.tags,
+                            configuration.value?.taglist,
+                        )
+                    } ?: run {
+                        Text("No memory cues added", fontStyle = FontStyle.Italic)
+                    }
 
                     Spacer(Modifier.height(10.dp))
 
@@ -187,8 +194,6 @@ fun PersonDetailsScreen(
                     Spacer(Modifier.height(5.dp))
 
                     PersonInfor(personViewModel, person)
-
-//                Text("Name: $personName, Description: $personDescription Tags: ${person.value!!.tags}")
 //                    Text(person.value.toString())
                 }
             }

@@ -15,6 +15,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import java.io.File
 import java.io.IOException
+import java.security.MessageDigest
 
 class AudioRecordViewModel(private var context: Context) : ViewModel(){
     private var myPlayer: MediaPlayer? = null
@@ -29,6 +30,7 @@ class AudioRecordViewModel(private var context: Context) : ViewModel(){
     val playbackComplete: LiveData<Boolean> = _playbackComplete
 
     fun startRecording() {
+        stopRecording()
         try {
             myRecorder = MediaRecorder()
             myRecorder?.setAudioSource(
@@ -53,17 +55,17 @@ class AudioRecordViewModel(private var context: Context) : ViewModel(){
         handler.post(updateAmplitudeRunnable)
     }
 
-    fun stopRecording() {
+    fun stopRecording(){
         try{
             myRecorder?.stop()
             myRecorder?.release()
             _audioAmplitude.value = 0 // Reset amplitude
             handler.removeCallbacks(updateAmplitudeRunnable)
         } catch (e: IllegalStateException) {
-            Log.e("TAG_AUDIO_RECORD", "stoppings recording failed")
+            Log.e("TAG_AUDIO_RECORD", "stopping recording failed")
         }
-
     }
+
 
     private val updateAmplitudeRunnable = object : Runnable {
         override fun run() {
@@ -72,7 +74,7 @@ class AudioRecordViewModel(private var context: Context) : ViewModel(){
         }
     }
 
-    fun startPlaying(audioFilePath: String? = "audiorecordtest.3gp") {
+    fun startPlaying(audioFilePath: String) {
         stopPlaying() // Ensure previous instance is stopped
         myPlayer = MediaPlayer()
         try {

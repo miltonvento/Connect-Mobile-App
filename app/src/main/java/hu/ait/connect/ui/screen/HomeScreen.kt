@@ -1,6 +1,7 @@
 package hu.ait.connect.ui.screen
 
 import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateContentSize
@@ -384,12 +385,6 @@ fun NewPersonDialog(
                     label = { Text("Additional Details") },
                     value = "$additionalDetails",
                     onValueChange = { additionalDetails = it },
-//                    isError = personName.isBlank(),
-//                    supportingText = {
-//                        if (personName.isBlank()) {
-//                            Text(text = "name required!", color = Color.Red)
-//                        }
-//                    }
                 )
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -720,7 +715,11 @@ fun AudioPlaybackUI(audioRecordViewModel: AudioRecordViewModel, audioFilePath: S
             onCheckedChange = { checked ->
                 isPlaying = checked
                 if (checked) {
-                    audioRecordViewModel.startPlaying(audioFilePath)
+                    if (!audioFilePath.isNullOrEmpty() && audioRecordViewModel.isFileExists(audioFilePath)) {
+                        audioRecordViewModel.startPlaying(audioFilePath)
+                    } else {
+                        audioRecordViewModel.startPlaying("audiorecordtest.3gp")
+                    }
                 } else {
                     audioRecordViewModel.stopPlaying()
                 }

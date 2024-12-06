@@ -87,12 +87,14 @@ import androidx.compose.material3.Tab
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -192,8 +194,9 @@ fun HomeScreen(
                             if (selectedTabIndex == 0) true
                             else it.categoryId == categories.value[selectedTabIndex - 1].id
                         }) { person ->
+                            val curCategory = categories.value.firstOrNull { it.id == person.categoryId }
                             PersonCard(
-                                categories.value.first { it.id == person.categoryId }.color,
+                                curCategory?.color ?: Color.Gray.toArgb() ,
                                 person,
                                 onDeletePerson = { person ->
                                     viewModel.deletePerson(person)
@@ -211,7 +214,8 @@ fun HomeScreen(
                 NewPersonDialog(
                     categories = categories.value,
                     tagList = tagList ?: emptyList(),
-                    viewModel,
+                    personViewModel = viewModel,
+                    categoryViewModel =  categoryViewModel,
                     onCancel = {
                         showAddDialog = false
                     },
@@ -231,6 +235,7 @@ fun NewPersonDialog(
     categories: List<Category>,
     tagList: List<String>,
     personViewModel: PersonViewModel,
+    categoryViewModel: CategoryViewModel,
     audioRecordViewModel: AudioRecordViewModel = viewModel(factory = AudioRecordViewModel.factory),
     onCancel: () -> Unit,
     onSaved: () -> Unit
@@ -291,8 +296,6 @@ fun NewPersonDialog(
     val scrollStateChips = rememberScrollState()
     val scrollStateDialog = rememberScrollState()
     var selectedCategory by remember { mutableStateOf<Category?>(null) }
-
-    Log.d("SELECTED", "NewPersonDialog: $selectedCategory")
 
     val permissionsState = rememberMultiplePermissionsState(
         permissions = listOf(
@@ -441,14 +444,14 @@ fun NewPersonDialog(
                     categories,
                     preselected = "Uncategorized",
                     onSelectionChanged = { selected ->
+                        Log.d("SELECTEDCAT", "NewPersonDialog: $selected")
                         selectedCategory = selected
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 10.dp)
+                        .padding(top = 10.dp),
+                    categoryViewModel = categoryViewModel
                 )
-
-
 
                 if (permissionsState.allPermissionsGranted) {
                     RecordingUI(audioRecordViewModel = audioRecordViewModel,
@@ -638,7 +641,8 @@ fun PersonCard(
 
                     Text(
                         text = "$personName",
-                        fontSize = 18.sp,
+                        fontSize = 22.sp,
+//                        fontWeight = FontWeight.Medium
                     )
                     Spacer(modifier = Modifier.width(8.dp))
 

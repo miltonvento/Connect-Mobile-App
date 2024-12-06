@@ -21,11 +21,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddCircle
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -48,12 +51,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import hu.ait.connect.R
+import hu.ait.connect.ui.screen.AdvancedColorPicker
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -181,7 +186,10 @@ fun AddCategoryDialog(
                 ) {
                     TextButton(
                         onClick = {
-                            viewModel.addCategory(categoryName = categoryName, categoryColor = selectedColor) {
+                            viewModel.addCategory(
+                                categoryName = categoryName,
+                                categoryColor = selectedColor
+                            ) {
                                 onCancel()
                             }
                         }
@@ -196,47 +204,22 @@ fun AddCategoryDialog(
                         Text("Cancel")
                     }
                 }
-                    Text(
-                        text = ("Selected Color"),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(20.dp)
-                            .background(selectedColor),
+                Text(
+                    text = ("Selected Color"),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(20.dp)
+                        .background(selectedColor),
 //                        color = MaterialTheme.colorScheme.primaryContainer
-                    )
+                )
                 Spacer(modifier = Modifier.height(16.dp))
-                    AdvancedColorPicker(
-                        onColorChanged = { color ->
-                            selectedColor = color
-                        },
-                    )
+                AdvancedColorPicker(
+                    onColorChanged = { color ->
+                        selectedColor = color
+                    },
+                )
             }
         }
-    }
-}
-
-@Composable
-fun AdvancedColorPicker(
-    onColorChanged: (Color) -> Unit
-) {
-    var hue by remember { mutableStateOf(0f) } // Hue 0-360
-    var saturation by remember { mutableStateOf(0.5f) } // Saturation 0-1
-    var lightness by remember { mutableStateOf(0.5f) } // Lightness 0-1
-
-    val selectedColor = Color.hsl(hue, saturation, lightness)
-    onColorChanged(selectedColor)
-
-    Column() {
-        Text(
-            text = "Adjust color using slider below:",
-            fontStyle = FontStyle.Italic,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
-        SliderWithLabel(
-            value = hue,
-            valueRange = 0f..360f,
-            onValueChange = { hue = it }
-        )
     }
 }
 

@@ -67,9 +67,11 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.outlined.ArrowDropDown
 import androidx.compose.material3.AssistChip
@@ -84,6 +86,7 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.ui.draw.clip
@@ -129,30 +132,56 @@ fun HomeScreen(
     val tabs = listOf("All") + categoryNames
     var selectedTabIndex by remember { mutableStateOf(0) }
 
+    var isSearching by rememberSaveable { mutableStateOf(false) }
+    val searchQuery by viewModel.searchQuery.collectAsState()
+
     Scaffold(
         topBar = {
             Column {
                 TopAppBar(
-                    title = { Text("Connect") },
+                    title = { Text("Connect")
+                        if (isSearching) {
+                            TextField(
+                                value = searchQuery,
+                                onValueChange = { viewModel.updateSearchQuery(it) },
+                                placeholder = { Text("Search...") },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        } else {
+                            Text("Connect")
+                        }},
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                         titleContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
                         navigationIconContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
                         actionIconContentColor = MaterialTheme.colorScheme.onSecondaryContainer
                     ),
+                    actions = {
+                        IconButton(onClick = {
+                            isSearching = !isSearching
+                            if (!isSearching) viewModel.updateSearchQuery("")
+                        }) {
+                            Icon(
+                                imageVector = if (isSearching) Icons.Filled.Close else Icons.Filled.Search,
+                                contentDescription = if (isSearching) "Close Search" else "Search"
+                            )
+                        }
+                    }
                 )
-                ScrollableTabRow(
-                    selectedTabIndex = selectedTabIndex,
-                    edgePadding = 16.dp,
-                    containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                ) {
-                    tabs.forEachIndexed { index, tab ->
-                        Tab(
-                            selected = selectedTabIndex == index,
-                            onClick = { selectedTabIndex = index },
-                            text = { Text(tab) }
-                        )
+                if (!isSearching) {
+                    ScrollableTabRow(
+                        selectedTabIndex = selectedTabIndex,
+                        edgePadding = 16.dp,
+                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                    ) {
+                        tabs.forEachIndexed { index, tab ->
+                            Tab(
+                                selected = selectedTabIndex == index,
+                                onClick = { selectedTabIndex = index },
+                                text = { Text(tab) }
+                            )
+                        }
                     }
                 }
             }
@@ -174,25 +203,34 @@ fun HomeScreen(
             }
         },
         content = { innerpadding ->
-            Column(
-                modifier = modifier
-                    .fillMaxSize()
-                    .padding(innerpadding)
-            ) {
-
-                if (peopleList.value.isEmpty()) {
-                    Text(
-                        "Click + to add a person", modifier = Modifier
-                            .fillMaxSize()
-                            .wrapContentSize(Alignment.Center)
-                    )
+            // Determine what to display based on the search state
+            val peopleToDisplay = remember(peopleList.value, searchQuery, selectedTabIndex) {
+                if (isSearching) {
+                    peopleList.value.filter {
+                        val matchesCategory = if (selectedTabIndex == 0) true else it.categoryId == categories.value[selectedTabIndex - 1].id
+                        val matchesSearch = searchQuery.isBlank() ||
+                                it.name.contains(searchQuery, true) ||
+                                it.description.contains(searchQuery, true)
+                        matchesCategory && matchesSearch
+                    }
                 } else {
-                    LazyColumn {
-                        items(peopleList.value.filter {
-                            if (selectedTabIndex == 0) true
-                            else it.categoryId == categories.value[selectedTabIndex - 1].id
-                        }) { person ->
-                            PersonCard(
+                    peopleList.value.filter {
+                        if (selectedTabIndex == 0) true else it.categoryId == categories.value[selectedTabIndex - 1].id
+                    }
+                }
+            }
+
+            LazyColumn(modifier = modifier.padding(innerpadding)) {
+                if (peopleToDisplay.isEmpty()) {
+                    item {
+                        Text(
+                            if (isSearching) "No results found" else "Click + to add a person",
+                            modifier = Modifier.fillMaxSize().wrapContentSize(Alignment.Center)
+                        )
+                    }
+                } else {
+                    items(peopleToDisplay) { person ->
+                        PersonCard(
                                 categories.value.first { it.id == person.categoryId }.color,
                                 person,
                                 onDeletePerson = { person ->
@@ -201,10 +239,44 @@ fun HomeScreen(
                                 onNavigateToPersonDetails = onNavigateToPersonDetails
                             )
                             Spacer(modifier = Modifier.height(12.dp))
-                        }
                     }
                 }
             }
+
+
+//            Column(
+//                modifier = modifier
+//                    .fillMaxSize()
+//                    .padding(innerpadding)
+//            ) {
+//
+//                if (peopleList.value.isEmpty()) {
+//                    Text(
+//                        "Click + to add a person", modifier = Modifier
+//                            .fillMaxSize()
+//                            .wrapContentSize(Alignment.Center)
+//                    )
+//                } else {
+//                    LazyColumn {
+//                        items(peopleList.value.filter {
+//                            val matchesTab = if (selectedTabIndex == 0) true else it.categoryId == categories.value[selectedTabIndex - 1].id
+//                            matchesTab
+////                            if (selectedTabIndex == 0) true
+////                            else it.categoryId == categories.value[selectedTabIndex - 1].id
+//                        }) { person ->
+//                            PersonCard(
+//                                categories.value.first { it.id == person.categoryId }.color,
+//                                person,
+//                                onDeletePerson = { person ->
+//                                    viewModel.deletePerson(person)
+//                                },
+//                                onNavigateToPersonDetails = onNavigateToPersonDetails
+//                            )
+//                            Spacer(modifier = Modifier.height(12.dp))
+//                        }
+//                    }
+//                }
+//            }
 
 
             if (showAddDialog) {

@@ -31,4 +31,11 @@ interface PersonDAO {
 
     @Query("SELECT * FROM person_table WHERE categoryId = :categoryId")
     fun getPeopleByCategory(categoryId: Int): Flow<List<Person>>
+
+    @Query("""
+        SELECT * FROM person_table 
+        WHERE name LIKE '%' || :query || '%' 
+        OR description LIKE '%' || :query || '%' 
+    """)
+    fun searchPeople(query: String): Flow<List<Person>>
 }

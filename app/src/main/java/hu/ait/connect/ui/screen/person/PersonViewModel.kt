@@ -13,6 +13,8 @@ import hu.ait.connect.data.person.Person
 import hu.ait.connect.ui.screen.category.CategoryViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -24,6 +26,9 @@ class PersonViewModel @Inject constructor(
 
     private val _uncategorizedCategoryId = MutableLiveData<Int>()
     val uncategorizedCategoryId: LiveData<Int> = _uncategorizedCategoryId
+
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery
 
     init {
         viewModelScope.launch {
@@ -85,5 +90,12 @@ class PersonViewModel @Inject constructor(
            personDAO.deleteAllItems()
         }
     }
+
+    fun updateSearchQuery(query: String) {
+        _searchQuery.value = query
+    }
+
+    fun searchPeople(query: String): Flow<List<Person>> = personDAO.searchPeople(query)
+
 
 }

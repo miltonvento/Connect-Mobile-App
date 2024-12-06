@@ -385,12 +385,6 @@ fun NewPersonDialog(
                     label = { Text("Additional Details") },
                     value = "$additionalDetails",
                     onValueChange = { additionalDetails = it },
-//                    isError = personName.isBlank(),
-//                    supportingText = {
-//                        if (personName.isBlank()) {
-//                            Text(text = "name required!", color = Color.Red)
-//                        }
-//                    }
                 )
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -711,7 +705,7 @@ fun AudioPlaybackUI(audioRecordViewModel: AudioRecordViewModel, audioFilePath: S
                     if (!audioFilePath.isNullOrEmpty() && audioRecordViewModel.isFileExists(audioFilePath)) {
                         audioRecordViewModel.startPlaying(audioFilePath)
                     } else {
-                        Log.e("AudioPlaybackUI", "Invalid or missing audio file path.")
+                        audioRecordViewModel.startPlaying("audiorecordtest.3gp")
                     }
                 } else {
                     audioRecordViewModel.stopPlaying()

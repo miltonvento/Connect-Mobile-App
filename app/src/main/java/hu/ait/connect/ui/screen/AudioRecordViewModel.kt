@@ -29,40 +29,8 @@ class AudioRecordViewModel(private var context: Context) : ViewModel(){
     private val _playbackComplete = MutableLiveData(false)
     val playbackComplete: LiveData<Boolean> = _playbackComplete
 
-    private var currentTempFilePath: String? = null
-
-    private fun generateUniqueFilename(prefix: String = "audio"): String {
-        val timestamp = System.currentTimeMillis()
-        return "$prefix-$timestamp.3gp"
-    }
-
-    private fun getTempAudioFilePath(context: Context): String {
-        val tempDir = File(context.cacheDir, "temp_audio")
-        if (!tempDir.exists()) tempDir.mkdirs()
-        return File(tempDir, generateUniqueFilename()).absolutePath
-    }
-
-    private fun getPermanentAudioFilePath(context: Context, fileName: String): String {
-        val permanentDir = File(context.filesDir, "audio_files")
-        if (!permanentDir.exists()) permanentDir.mkdirs()
-        return File(permanentDir, fileName).absolutePath
-    }
-
-    private fun calculateFileHash(file: File): String {
-        val digest = MessageDigest.getInstance("SHA-256")
-        file.inputStream().use { input ->
-            val buffer = ByteArray(1024)
-            var bytesRead: Int
-            while (input.read(buffer).also { bytesRead = it } != -1) {
-                digest.update(buffer, 0, bytesRead)
-            }
-        }
-        return digest.digest().joinToString("") { "%02x".format(it) }
-    }
-
     fun startRecording() {
         stopRecording()
-        currentTempFilePath = getTempAudioFilePath(context)
         try {
             myRecorder = MediaRecorder()
             myRecorder?.setAudioSource(
@@ -87,47 +55,17 @@ class AudioRecordViewModel(private var context: Context) : ViewModel(){
         handler.post(updateAmplitudeRunnable)
     }
 
-    fun stopRecording(): String? {
+    fun stopRecording(){
         try{
             myRecorder?.stop()
             myRecorder?.release()
             _audioAmplitude.value = 0 // Reset amplitude
             handler.removeCallbacks(updateAmplitudeRunnable)
         } catch (e: IllegalStateException) {
-            Log.e("TAG_AUDIO_RECORD", "stoppings recording failed")
+            Log.e("TAG_AUDIO_RECORD", "stopping recording failed")
         }
-
-        return currentTempFilePath
-
     }
 
-    fun saveToPermanentStorage(recordId: Long): String? {
-        currentTempFilePath?.let { tempPath ->
-            val permanentPath = getPermanentAudioFilePath(context, "audio-$recordId.3gp")
-            File(tempPath).copyTo(File(permanentPath), overwrite = true)
-            File(tempPath).delete() // Clean up temp file
-            return permanentPath
-        }
-        return null
-    }
-
-//    fun validateAndSave(recordId: Long): String? {
-//        currentTempFilePath?.let { tempPath ->
-//            val tempFile = File(tempPath)
-//            val tempFileHash = calculateFileHash(tempFile)
-//
-//            // Check database for duplicates
-//            if (!database.containsFileWithHash(tempFileHash)) {
-//                val permanentPath = saveToPermanentStorage(recordId)
-//                database.saveAudioFile(recordId, permanentPath, tempFileHash)
-//                return permanentPath
-//            } else {
-//                tempFile.delete() // Delete duplicate temp file
-//                return null
-//            }
-//        }
-//        return null
-//    }
 
     private val updateAmplitudeRunnable = object : Runnable {
         override fun run() {
@@ -136,7 +74,7 @@ class AudioRecordViewModel(private var context: Context) : ViewModel(){
         }
     }
 
-    fun startPlaying(audioFilePath: String? = "audiorecordtest.3gp") {
+    fun startPlaying(audioFilePath: String) {
         stopPlaying() // Ensure previous instance is stopped
         myPlayer = MediaPlayer()
         try {

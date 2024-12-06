@@ -59,10 +59,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import hu.ait.connect.R
 import hu.ait.connect.data.person.Person
+import hu.ait.connect.ui.screen.AudioPlaybackUI
+import hu.ait.connect.ui.screen.AudioRecordViewModel
 import hu.ait.connect.ui.screen.ConfigurationViewModel
 import hu.ait.connect.ui.screen.TagArea
 import hu.ait.connect.ui.screen.category.CategoryViewModel
@@ -75,12 +78,14 @@ fun PersonDetailsScreen(
     personId: String,
     personViewModel: PersonViewModel = hiltViewModel(),
     configurationViewModel: ConfigurationViewModel = hiltViewModel(),
+    audioRecordViewModel: AudioRecordViewModel = viewModel(factory = AudioRecordViewModel.factory)
 ) {
     val configuration = configurationViewModel.getConfig().collectAsState(initial = null)
     val person = personViewModel.getPersonById(personId.toInt()).collectAsState(initial = null)
     var personName by rememberSaveable { mutableStateOf("") }
-    var personImageUri: String?
+    var personImageUri by rememberSaveable { mutableStateOf<String?>(null) }
     var personDescription by rememberSaveable { mutableStateOf("") }
+    var personAudio by rememberSaveable { mutableStateOf(ByteArray(0)) }
     var cornerRadius = 20
 
     if (person.value == null) {
@@ -89,6 +94,7 @@ fun PersonDetailsScreen(
     } else {
         personName = person.value!!.name
         personDescription = person.value!!.description
+        personAudio = person.value!!.audio!!
         personImageUri = person.value!!.imageUri
 
         Scaffold(
@@ -193,8 +199,16 @@ fun PersonDetailsScreen(
                     )
                     Spacer(Modifier.height(5.dp))
 
+                    if (personAudio != null){
+                        audioRecordViewModel.saveAudioFileFromByteArray(personAudio, "$personId, audio.3gp")
+                        if (audioRecordViewModel.isFileExists("$personId, audio.3gp")) {
+                            AudioPlaybackUI(audioRecordViewModel = audioRecordViewModel, audioFilePath = "$personId, audio.3gp")
+                        }
+                    }
+
                     PersonInfor(personViewModel, person)
                     Text(person.value.toString())
+
                 }
             }
         )

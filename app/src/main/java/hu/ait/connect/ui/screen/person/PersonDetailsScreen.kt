@@ -60,6 +60,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import hu.ait.connect.R
 import hu.ait.connect.data.person.Person
+import hu.ait.connect.ui.screen.AudioPlaybackUI
+import hu.ait.connect.ui.screen.AudioRecordViewModel
 import hu.ait.connect.ui.screen.ConfigurationViewModel
 import hu.ait.connect.ui.screen.category.CategoryViewModel
 import kotlinx.coroutines.launch
@@ -71,11 +73,13 @@ fun PersonDetailsScreen(
     personId: String,
     personViewModel: PersonViewModel = hiltViewModel(),
     configurationViewModel: ConfigurationViewModel = hiltViewModel(),
+    audioRecordViewModel: AudioRecordViewModel = hiltViewModel()
 ) {
     val configuration = configurationViewModel.getConfig().collectAsState(initial = null)
     val person = personViewModel.getPersonById(personId.toInt()).collectAsState(initial = null)
     var personName by rememberSaveable { mutableStateOf("") }
     var personDescription by rememberSaveable { mutableStateOf("") }
+//    var personAudio by rememberSaveable { mutableStateOf(ByteArray(0)) }
     var cornerRadius = 20
 
     if (person.value == null) {
@@ -84,6 +88,7 @@ fun PersonDetailsScreen(
     } else {
         personName = person.value!!.name
         personDescription = person.value!!.description
+//        personAudio = person.value!!.audio!!
 
         Scaffold(
             topBar = {
@@ -167,6 +172,13 @@ fun PersonDetailsScreen(
                         ),
                     )
                     Spacer(Modifier.height(5.dp))
+
+//                    if (personAudio != null){
+//                        audioRecordViewModel.saveAudioFileFromByteArray(personAudio, "$personId, audio.3gp")
+//                        if (audioRecordViewModel.isFileExists("$personId, audio.3gp")) {
+//                            AudioPlaybackUI(audioRecordViewModel = audioRecordViewModel, audioFilePath = "$personId, audio.3gp")
+//                        }
+//                    }
 
                     PersonInfor(personViewModel, person)
 

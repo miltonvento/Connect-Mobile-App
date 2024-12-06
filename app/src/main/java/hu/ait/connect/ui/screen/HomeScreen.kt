@@ -192,13 +192,14 @@ fun HomeScreen(
                             else it.categoryId == categories.value[selectedTabIndex - 1].id
                         }) { person ->
                             PersonCard(
-                                categoryDetailsViewModel,
+                                categories.value.first { it.id == person.categoryId }.color,
                                 person,
                                 onDeletePerson = { person ->
                                     viewModel.deletePerson(person)
                                 },
                                 onNavigateToPersonDetails = onNavigateToPersonDetails
                             )
+                            Spacer(modifier = Modifier.height(12.dp))
                         }
                     }
                 }
@@ -262,10 +263,12 @@ fun NewPersonDialog(
             tags = tag.filter { it.value.isNotEmpty() }.map { it.label to it.value }.toMap()
         }
 
+        Log.d("SAVING", "onSave: $selectedCategory")
+
         personViewModel.addPerson(
             name = personName,
             description = additionalDetails,
-//                                categoryId = 3,
+            categoryId = selectedCategory?.id,
             tags = tags ?: emptyMap(),
             audio = if (audioRecorded) {
                 audioRecordViewModel.getAudioByteArray() // Assign audio if recorded
@@ -286,6 +289,8 @@ fun NewPersonDialog(
     val scrollState = rememberScrollState()
     val scrollStateChips = rememberScrollState()
     var selectedCategory by remember { mutableStateOf<Category?>(null) }
+
+    Log.d("SELECTED", "NewPersonDialog: $selectedCategory")
 
     val permissionsState = rememberMultiplePermissionsState(
         permissions = listOf(
@@ -419,7 +424,6 @@ fun NewPersonDialog(
                             modifier = Modifier.padding(end = 8.dp)
                         )
                     }
-
                 }
 
                 OutlinedTextField(
@@ -559,7 +563,7 @@ fun NewPersonDialog(
 
 @Composable
 fun PersonCard(
-    categoryDetailsViewModel: CategoryDetailsViewModel,
+    categoryColor: Int,
     person: Person,
     onDeletePerson: (Person) -> Unit,
     onNavigateToPersonDetails: (String) -> Unit,
@@ -574,15 +578,13 @@ fun PersonCard(
 
     var expanded by remember { mutableStateOf(false) }
 
-//    var category = categoryDetailsViewModel.getCategoryById(person.categoryId.toInt())
-
     Card(
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant,
         ),
         shape = RoundedCornerShape(20.dp),
         elevation = CardDefaults.cardElevation(
-            defaultElevation = 10.dp
+            defaultElevation = 5.dp
         ),
         modifier = Modifier
             .padding(5.dp)
@@ -607,19 +609,20 @@ fun PersonCard(
                         model = uri,
                         contentDescription = "Person Image",
                         modifier = Modifier
-                            .size(60.dp) // Adjust the size to your preference
-                            .clip(CircleShape), // Optional: make the image circular
-                        contentScale = ContentScale.Crop // Crop to fit inside the circle
-
+                            .size(60.dp)
+                            .clip(CircleShape)
+                            .border(2.dp, Color(categoryColor), CircleShape),
+                        contentScale = ContentScale.Crop
                     )
                 } ?: run {
                     Image(
                         painter = painterResource(R.drawable.profile_avatar),
                         contentDescription = "Profile Picture",
                         modifier = Modifier
-                            .size(65.dp) // Size of the circular image
-                            .clip(CircleShape), // Makes the image circular
-                        contentScale = ContentScale.Crop // Crop to fit inside the circle
+                            .size(65.dp)
+                            .clip(CircleShape)
+                            .border(2.dp, Color(categoryColor), CircleShape),
+                        contentScale = ContentScale.Crop,
                     )
                 }
 
@@ -632,7 +635,7 @@ fun PersonCard(
 
                     Text(
                         text = "$personName",
-                        fontSize = 24.sp,
+                        fontSize = 18.sp,
                     )
                     Spacer(modifier = Modifier.width(8.dp))
 
@@ -641,6 +644,7 @@ fun PersonCard(
                     ) {
                         TagArea(
                             tags = personTags,
+                            borderColor = categoryColor
                         )
                     } else {
                         Text(
@@ -675,7 +679,8 @@ fun PersonCard(
                                 "Less"
                             } else {
                                 "More"
-                            }
+                            },
+//                            tint = Color(categoryColor)
                         )
                     }
 
@@ -684,7 +689,8 @@ fun PersonCard(
                         contentDescription = "Delete",
                         modifier = Modifier.clickable {
                             onDeletePerson(person)
-                        }
+                        },
+//                        tint = Color(categoryColor)
                     )
                 }
 

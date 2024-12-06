@@ -64,6 +64,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.KeyboardArrowDown
@@ -285,6 +286,7 @@ fun NewPersonDialog(
     var audioRecorded by remember { mutableStateOf(false) }
     val scrollState = rememberScrollState()
     val scrollStateChips = rememberScrollState()
+    val scrollStateDialog = rememberScrollState()
     var selectedCategory by remember { mutableStateOf<Category?>(null) }
 
     val permissionsState = rememberMultiplePermissionsState(
@@ -320,6 +322,7 @@ fun NewPersonDialog(
         ) {
             Column(
                 modifier = Modifier.padding(15.dp)
+                    .verticalScroll(scrollStateDialog)
             ) {
                 Text(
                     "Add New Person",

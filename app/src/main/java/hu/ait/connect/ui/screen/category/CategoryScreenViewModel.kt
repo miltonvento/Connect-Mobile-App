@@ -1,5 +1,7 @@
 package hu.ait.connect.ui.screen.category
 
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.LiveData

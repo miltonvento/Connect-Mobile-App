@@ -1,8 +1,10 @@
-package hu.ait.connect.ui.screen
+package hu.ait.connect.ui.screen.components
 
-import android.util.Log
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,21 +13,29 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.ArrowDropDown
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
@@ -38,13 +48,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
+import coil.compose.AsyncImage
+import hu.ait.connect.R
 import hu.ait.connect.data.category.Category
+import hu.ait.connect.data.person.Person
+import hu.ait.connect.ui.screen.AudioPlaybackUI
+import hu.ait.connect.ui.screen.AudioRecordViewModel
 import hu.ait.connect.ui.screen.category.CategoryViewModel
 import hu.ait.connect.ui.screen.category.SliderWithLabel
 
@@ -70,7 +88,7 @@ fun TagArea(
         FlowRow(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(2.dp),
+                .padding(1.dp),
         ) {
             tags.forEach { (tag, value) ->
                 if (value != "") {
@@ -79,9 +97,7 @@ fun TagArea(
                         label = {
                             Text(
                                 value.toString(),
-                                style = MaterialTheme.typography.bodyMedium.copy(
-                                    fontSize = 16.sp,
-                                ),
+                                style = MaterialTheme.typography.bodyMedium,
                             )
                         },
                         colors = AssistChipDefaults.assistChipColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
@@ -89,7 +105,7 @@ fun TagArea(
                             1.dp,
                             borderColor?.let { Color(it) } ?: Color.Transparent)
                     )
-                    Spacer(modifier = Modifier.width(12.dp))
+//                    Spacer(modifier = Modifier.defaultMinSize())
                 }
             }
         }
@@ -295,3 +311,139 @@ fun AdvancedColorPicker(
         )
     }
 }
+
+//@Composable
+//fun PersonCard(
+//    categoryColor: Int,
+//    person: Person,
+//    onDeletePerson: (Person) -> Unit,
+//    onNavigateToPersonDetails: (String) -> Unit,
+//    audioRecordViewModel: AudioRecordViewModel = viewModel(factory = AudioRecordViewModel.factory),
+//) {
+//    var personId = person.id
+//    var personName = person.name
+//    var personDescription = person.description
+//    var personAudio = person.audio
+//    var personTags = person.tags
+//    val personImageUri = person.imageUri
+//
+//    var expanded by remember { mutableStateOf(false) }
+//
+//    Card(
+//        colors = CardDefaults.cardColors(
+//            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+//        ),
+//        shape = RoundedCornerShape(20.dp),
+//        elevation = CardDefaults.cardElevation(
+//            defaultElevation = 5.dp
+//        ),
+//        modifier = Modifier
+//            .padding(5.dp)
+//            .fillMaxWidth()
+//            .clickable {
+//                onNavigateToPersonDetails(personId.toString())
+//            },
+//    ) {
+//        Column(
+//            modifier = Modifier
+//                .padding(20.dp)
+//                .animateContentSize()
+//        ) {
+//
+//            Row(
+//                verticalAlignment = Alignment.CenterVertically
+//            ) {
+//
+//                personImageUri?.let { uri ->
+//                    AsyncImage(
+//                        model = uri,
+//                        contentDescription = "Person Image",
+//                        modifier = Modifier
+//                            .size(60.dp)
+//                            .clip(CircleShape)
+//                            .border(2.dp, Color(categoryColor), CircleShape),
+//                        contentScale = ContentScale.Crop
+//                    )
+//                } ?: run {
+//                    Image(
+//                        painter = painterResource(R.drawable.profile_avatar),
+//                        contentDescription = "Profile Picture",
+//                        modifier = Modifier
+//                            .size(65.dp)
+//                            .clip(CircleShape)
+//                            .border(2.dp, Color(categoryColor), CircleShape),
+//                        contentScale = ContentScale.Crop,
+//                    )
+//                }
+//
+//                Spacer(modifier = Modifier.width(8.dp))
+//
+//                Column(
+//                    modifier = Modifier.weight(1f)
+//                ) {
+//
+//                    Text(
+//                        text = "$personName",
+//                        fontSize = 22.sp,
+//                    )
+//                    Spacer(modifier = Modifier.width(8.dp))
+//
+//                    if (
+//                        personTags?.isNotEmpty() == true
+//                    ) {
+//                        TagArea(
+//                            tags = personTags,
+//                            borderColor = categoryColor
+//                        )
+//                    } else {
+//                        Text(
+//                            personDescription,
+//                            maxLines = 2
+//                        )
+//                    }
+//                    if (expanded) {
+//                        if (personAudio != null) {
+//                            audioRecordViewModel.saveAudioFileFromByteArray(
+//                                personAudio,
+//                                "$personId, audio.3gp"
+//                            )
+//                            if (audioRecordViewModel.isFileExists("$personId, audio.3gp")) {
+//                                AudioPlaybackUI(
+//                                    audioRecordViewModel = audioRecordViewModel,
+//                                    audioFilePath = "$personId, audio.3gp"
+//                                )
+//                            }
+//                        }
+//                    }
+//                }
+//
+//                Row(
+//                    verticalAlignment = Alignment.CenterVertically
+//                ) {
+//                    IconButton(onClick = { expanded = !expanded }) {
+//                        Icon(
+//                            imageVector = if (expanded) Icons.Filled.KeyboardArrowUp
+//                            else Icons.Filled.KeyboardArrowDown,
+//                            contentDescription = if (expanded) {
+//                                "Less"
+//                            } else {
+//                                "More"
+//                            },
+////                            tint = Color(categoryColor)
+//                        )
+//                    }
+//
+//                    Icon(
+//                        imageVector = Icons.Filled.Delete,
+//                        contentDescription = "Delete",
+//                        modifier = Modifier.clickable {
+//                            onDeletePerson(person)
+//                        },
+////                        tint = Color(categoryColor)
+//                    )
+//                }
+//
+//            }
+//        }
+//    }
+//}

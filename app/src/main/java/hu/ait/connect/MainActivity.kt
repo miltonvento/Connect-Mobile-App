@@ -20,6 +20,7 @@ import hu.ait.connect.ui.screen.HomeScreen
 import hu.ait.connect.ui.screen.person.PersonDetailsScreen
 import hu.ait.connect.ui.theme.ConnectTheme
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.runtime.getValue

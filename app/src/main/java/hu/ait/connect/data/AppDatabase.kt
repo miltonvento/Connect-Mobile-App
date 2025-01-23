@@ -12,7 +12,7 @@ import hu.ait.connect.data.configuration.ConfigurationDAO
 import hu.ait.connect.data.person.Person
 import hu.ait.connect.data.person.PersonDAO
 
-@Database(entities = [Person::class, Configuration::class, Category::class], version = 10, exportSchema = false)
+@Database(entities = [Person::class, Configuration::class, Category::class], version = 11, exportSchema = false)
 @TypeConverters(Converters::class) // Register the Converters class
 abstract class AppDatabase : RoomDatabase() {
 

@@ -29,7 +29,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -60,6 +59,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import hu.ait.connect.data.person.Person
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -73,17 +73,12 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Stop
-import androidx.compose.material.icons.outlined.ArrowDropDown
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconToggleButton
-import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
-import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.ScrollableTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TextField
@@ -94,10 +89,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -106,11 +98,12 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import coil.compose.AsyncImage
 import hu.ait.connect.R
 import hu.ait.connect.data.category.Category
-import hu.ait.connect.ui.screen.AudioRecordViewModel
-import hu.ait.connect.ui.screen.ConfigurationViewModel
 import hu.ait.connect.ui.screen.camera.ComposeFileProvider
 import hu.ait.connect.ui.screen.category.CategoryDetailsViewModel
 import hu.ait.connect.ui.screen.category.CategoryViewModel
+import hu.ait.connect.ui.screen.components.CategoriesDropdown
+import hu.ait.connect.ui.screen.components.ListViewComponent
+import hu.ait.connect.ui.screen.components.TagArea
 import hu.ait.connect.ui.screen.person.PersonViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -147,11 +140,18 @@ fun HomeScreen(
                                 value = searchQuery,
                                 onValueChange = { viewModel.updateSearchQuery(it) },
                                 placeholder = { Text("Search...") },
-                                modifier = Modifier.fillMaxWidth()
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .background(
+                                        MaterialTheme.colorScheme.surface,
+                                        RoundedCornerShape(4.dp)
+                                    ),
+                                shape = RoundedCornerShape(24.dp),
                             )
                         } else {
                             Text("Connect")
-                        }},
+                        }
+                            },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                         titleContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -181,14 +181,12 @@ fun HomeScreen(
                             Tab(
                                 selected = selectedTabIndex == index,
                                 onClick = { selectedTabIndex = index },
-                                text = { Text(tab) }
+                                text = { Text(tab.trim()) }
                             )
                         }
                     }
                 }
             }
-
-
         },
         floatingActionButton = {
             FloatingActionButton(
@@ -205,14 +203,17 @@ fun HomeScreen(
             }
         },
         content = { innerpadding ->
-            // Determine what to display based on the search state
+
             val peopleToDisplay = remember(peopleList.value, searchQuery, selectedTabIndex) {
                 if (isSearching) {
                     peopleList.value.filter {
                         val matchesCategory = if (selectedTabIndex == 0) true else it.categoryId == categories.value[selectedTabIndex - 1].id
                         val matchesSearch = searchQuery.isBlank() ||
                                 it.name.contains(searchQuery, true) ||
-                                it.description.contains(searchQuery, true)
+                                it.description.contains(searchQuery, true) ||
+                                it.tags?.values?.any { value ->
+                                    value.toString().contains(searchQuery, true)
+                                } ?: false
                         matchesCategory && matchesSearch
                     }
                 } else {
@@ -222,64 +223,39 @@ fun HomeScreen(
                 }
             }
 
-            LazyColumn(modifier = modifier.padding(innerpadding)) {
+            LazyColumn(
+                contentPadding = innerpadding,
+                modifier = modifier.padding(8.dp)) {
                 if (peopleToDisplay.isEmpty()) {
                     item {
                         Text(
                             if (isSearching) "No results found" else "Click + to add a person",
-                            modifier = Modifier.fillMaxSize().wrapContentSize(Alignment.Center)
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .wrapContentSize(Alignment.Center)
                         )
                     }
                 } else {
-                    items(peopleToDisplay) { person ->
-                        PersonCard(
-                                categories.value.first { it.id == person.categoryId }.color,
-                                person,
-                                onDeletePerson = { person ->
+                    itemsIndexed(peopleToDisplay) {index, person ->
+                        ListViewComponent(
+                            person = person,
+                            onDeletePerson = { person ->
                                     viewModel.deletePerson(person)
                                 },
-                                onNavigateToPersonDetails = onNavigateToPersonDetails
+                            categoryColor = Color.Transparent.toArgb(),
+                            onNavigateToPersonDetails = onNavigateToPersonDetails
+                        )
+
+                        if (index < peopleToDisplay.lastIndex) {
+                            HorizontalDivider(
+                                modifier = Modifier.padding(vertical = 4.dp),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
                             )
-                            Spacer(modifier = Modifier.height(12.dp))
+                        }
+
                     }
                 }
             }
-
-
-//            Column(
-//                modifier = modifier
-//                    .fillMaxSize()
-//                    .padding(innerpadding)
-//            ) {
-//
-//                if (peopleList.value.isEmpty()) {
-//                    Text(
-//                        "Click + to add a person", modifier = Modifier
-//                            .fillMaxSize()
-//                            .wrapContentSize(Alignment.Center)
-//                    )
-//                } else {
-//                    LazyColumn {
-//                        items(peopleList.value.filter {
-//                            val matchesTab = if (selectedTabIndex == 0) true else it.categoryId == categories.value[selectedTabIndex - 1].id
-//                            matchesTab
-////                            if (selectedTabIndex == 0) true
-////                            else it.categoryId == categories.value[selectedTabIndex - 1].id
-//                        }) { person ->
-//                            PersonCard(
-//                                categories.value.first { it.id == person.categoryId }.color,
-//                                person,
-//                                onDeletePerson = { person ->
-//                                    viewModel.deletePerson(person)
-//                                },
-//                                onNavigateToPersonDetails = onNavigateToPersonDetails
-//                            )
-//                            Spacer(modifier = Modifier.height(12.dp))
-//                        }
-//                    }
-//                }
-//            }
-
 
             if (showAddDialog) {
                 NewPersonDialog(
@@ -340,7 +316,7 @@ fun NewPersonDialog(
             tags = tag.filter { it.value.isNotEmpty() }.map { it.label to it.value }.toMap()
         }
 
-        Log.d("SAVING", "onSave: $selectedCategory")
+//        Log.d("SAVING", "onSave: $selectedCategory")
 
         personViewModel.addPerson(
             name = personName,
@@ -400,7 +376,8 @@ fun NewPersonDialog(
             shape = RoundedCornerShape(size = 6.dp)
         ) {
             Column(
-                modifier = Modifier.padding(15.dp)
+                modifier = Modifier
+                    .padding(15.dp)
                     .verticalScroll(scrollStateDialog)
             ) {
                 Text(
@@ -639,145 +616,6 @@ fun NewPersonDialog(
 }
 
 @Composable
-fun PersonCard(
-    categoryColor: Int,
-    person: Person,
-    onDeletePerson: (Person) -> Unit,
-    onNavigateToPersonDetails: (String) -> Unit,
-    audioRecordViewModel: AudioRecordViewModel = viewModel(factory = AudioRecordViewModel.factory),
-) {
-    var personId = person.id
-    var personName = person.name
-    var personDescription = person.description
-    var personAudio = person.audio
-    var personTags = person.tags
-    val personImageUri = person.imageUri
-
-    var expanded by remember { mutableStateOf(false) }
-
-    Card(
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-        ),
-        shape = RoundedCornerShape(20.dp),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 5.dp
-        ),
-        modifier = Modifier
-            .padding(5.dp)
-            .fillMaxWidth()
-            .clickable {
-                onNavigateToPersonDetails(personId.toString())
-            },
-    ) {
-
-        Column(
-            modifier = Modifier
-                .padding(20.dp)
-                .animateContentSize()
-        ) {
-
-            Row(
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-
-                personImageUri?.let { uri ->
-                    AsyncImage(
-                        model = uri,
-                        contentDescription = "Person Image",
-                        modifier = Modifier
-                            .size(60.dp)
-                            .clip(CircleShape)
-                            .border(2.dp, Color(categoryColor), CircleShape),
-                        contentScale = ContentScale.Crop
-                    )
-                } ?: run {
-                    Image(
-                        painter = painterResource(R.drawable.profile_avatar),
-                        contentDescription = "Profile Picture",
-                        modifier = Modifier
-                            .size(65.dp)
-                            .clip(CircleShape)
-                            .border(2.dp, Color(categoryColor), CircleShape),
-                        contentScale = ContentScale.Crop,
-                    )
-                }
-
-
-                Spacer(modifier = Modifier.width(8.dp))
-
-                Column(
-                    modifier = Modifier.weight(1f)
-                ) {
-
-                    Text(
-                        text = "$personName",
-                        fontSize = 22.sp,
-//                        fontWeight = FontWeight.Medium
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    if (
-                        personTags?.isNotEmpty() == true
-                    ) {
-                        TagArea(
-                            tags = personTags,
-                            borderColor = categoryColor
-                        )
-                    } else {
-                        Text(
-                            personDescription,
-                            maxLines = 2
-                        )
-                    }
-                    if (expanded) {
-                        if (personAudio != null) {
-                            audioRecordViewModel.saveAudioFileFromByteArray(
-                                personAudio,
-                                "$personId, audio.3gp"
-                            )
-                            if (audioRecordViewModel.isFileExists("$personId, audio.3gp")) {
-                                AudioPlaybackUI(
-                                    audioRecordViewModel = audioRecordViewModel,
-                                    audioFilePath = "$personId, audio.3gp"
-                                )
-                            }
-                        }
-                    }
-                }
-
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(onClick = { expanded = !expanded }) {
-                        Icon(
-                            imageVector = if (expanded) Icons.Filled.KeyboardArrowUp
-                            else Icons.Filled.KeyboardArrowDown,
-                            contentDescription = if (expanded) {
-                                "Less"
-                            } else {
-                                "More"
-                            },
-//                            tint = Color(categoryColor)
-                        )
-                    }
-
-                    Icon(
-                        imageVector = Icons.Filled.Delete,
-                        contentDescription = "Delete",
-                        modifier = Modifier.clickable {
-                            onDeletePerson(person)
-                        },
-//                        tint = Color(categoryColor)
-                    )
-                }
-
-            }
-        }
-    }
-}
-
-@Composable
 fun AudioVisualizer(amplitude: Int, modifier: Modifier = Modifier) {
     val bars = 10
     val maxAmplitude = 32767 // MediaRecorder's max amplitude value
@@ -851,7 +689,6 @@ fun RecordingUI(audioRecordViewModel: AudioRecordViewModel, onAudioRecorded: () 
                 )
             }
         }
-
     }
 }
 

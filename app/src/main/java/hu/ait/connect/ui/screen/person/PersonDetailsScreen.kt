@@ -2,13 +2,10 @@ package hu.ait.connect.ui.screen.person
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,19 +13,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material3.AssistChip
-import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -67,9 +58,7 @@ import hu.ait.connect.data.person.Person
 import hu.ait.connect.ui.screen.AudioPlaybackUI
 import hu.ait.connect.ui.screen.AudioRecordViewModel
 import hu.ait.connect.ui.screen.ConfigurationViewModel
-import hu.ait.connect.ui.screen.TagArea
-import hu.ait.connect.ui.screen.category.CategoryViewModel
-import kotlinx.coroutines.launch
+import hu.ait.connect.ui.screen.components.TagArea
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -90,12 +79,12 @@ fun PersonDetailsScreen(
 
     if (person.value == null) {
         Text(text = "Loading person details...")
-
     } else {
-        personName = person.value!!.name
-        personDescription = person.value!!.description
-        personAudio = person.value!!.audio!!
-        personImageUri = person.value!!.imageUri
+        val currentPerson = person.value!!
+        personName = currentPerson.name
+        personDescription = currentPerson.description
+        personAudio = currentPerson.audio ?: ByteArray(0)
+        personImageUri = currentPerson.imageUri
 
         Scaffold(
             topBar = {
@@ -230,7 +219,7 @@ fun EditableText(
     personViewModel: PersonViewModel = hiltViewModel(),
     personToEdit: Person
 ) {
-    // State to track the current text and edit mode
+
     var text by remember { mutableStateOf(personToEdit.description) }
     var isEditing by remember { mutableStateOf(false) }
 

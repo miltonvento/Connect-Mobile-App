@@ -39,6 +39,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.stringResource
+import hu.ait.connect.ui.screen.components.ListViewComponent
+import hu.ait.connect.ui.screen.person.PersonViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -46,7 +48,8 @@ fun CategoryDetailsScreen(
     navController: NavHostController,
     categoryId: String,
     categoryDetailsViewModel: CategoryDetailsViewModel = hiltViewModel(),
-    categoryViewModel: CategoryViewModel = hiltViewModel()
+    categoryViewModel: CategoryViewModel = hiltViewModel(),
+    personViewModel: PersonViewModel = hiltViewModel()
 ) {
 
     var category = categoryDetailsViewModel.getCategoryById(categoryId.toInt())
@@ -59,8 +62,6 @@ fun CategoryDetailsScreen(
         ) {
             CircularProgressIndicator(modifier = Modifier.padding(16.dp).align(Alignment.Center) )
         }
-
-
     } else {
 
     Scaffold(
@@ -99,46 +100,16 @@ fun CategoryDetailsScreen(
                 .padding(16.dp)
         ) {
             items(people.size) { index ->
-                    ListItem(
-                        headlineContent = {
-                            Text(
-                                text = people[index].name,
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                        },
-                        supportingContent = {
-                            Text(
-                                text = people[index].description,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        },
-                        leadingContent = {
-                            Image(
-                                painter = painterResource(id = R.drawable.profile_avatar), // Replace with your drawable
-                                contentDescription = null,
-                                modifier = Modifier
-                                    .size(56.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.primaryContainer),
-                                contentScale = ContentScale.Crop
-                            )
-                        },
-                        trailingContent = {
-                            Icon(
-                                imageVector = Icons.Filled.Delete,
-                                contentDescription = "Delete",
-                                modifier = Modifier.clickable {
-//                                    onDeletePerson(person)
-                                },
-                                tint = Color.Black
-                            )
-                        },
-                        colors = ListItemDefaults.colors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        ),
-                        modifier = Modifier.padding(vertical = 8.dp)
+                ListViewComponent(
+                    person = people[index],
+                    categoryColor = category.color,
+                    onDeletePerson = { person ->
+                        personViewModel.deletePerson(person)
+                    },
+                    onNavigateToPersonDetails = {
+                        personId ->
+                        navController.navigate("person_details/$personId")
+                    }
                 )
                 HorizontalDivider(
                     modifier = Modifier.padding(vertical = 8.dp),

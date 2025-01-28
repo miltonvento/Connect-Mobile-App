@@ -13,4 +13,5 @@ sealed class MainNavigation(val route: String, val icon: ImageVector, val label:
     object CategoryDetailsScreen : MainNavigation("categorydetails?categoryId={categoryId}", Icons.Default.Image, "Category Details")
     object CategoryScreen : MainNavigation("category", Icons.Default.Category, "Categories")
     object AiAssistance : MainNavigation("assistance", Icons.Default.ChatBubble, "Assistance")
+    object NewPersonScreen : MainNavigation("newperson", Icons.Default.Image, "New Person")
 }

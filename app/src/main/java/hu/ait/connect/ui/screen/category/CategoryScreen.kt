@@ -77,7 +77,6 @@ fun CategoryScreen(
                 onClick = {
                     showAddDialog = true
                 },
-                modifier = Modifier.padding(bottom = 72.dp)
             )
             {
                 Icon(

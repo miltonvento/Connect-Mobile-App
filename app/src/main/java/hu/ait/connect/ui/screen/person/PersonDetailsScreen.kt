@@ -1,5 +1,6 @@
 package hu.ait.connect.ui.screen.person
 
+import AudioPlaybackUI
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -55,7 +56,6 @@ import androidx.navigation.NavHostController
 import coil.compose.AsyncImage
 import hu.ait.connect.R
 import hu.ait.connect.data.person.Person
-import hu.ait.connect.ui.screen.AudioPlaybackUI
 import hu.ait.connect.ui.screen.AudioRecordViewModel
 import hu.ait.connect.ui.screen.ConfigurationViewModel
 import hu.ait.connect.ui.screen.components.TagArea

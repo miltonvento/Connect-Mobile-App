@@ -1,5 +1,9 @@
 package hu.ait.connect.ui.screen.newPerson
 
+import AudioPlaybackUI
+import AudioVisualizer
+import RecordIcon
+import RecordingUI
 import android.content.Context
 import android.net.Uri
 import android.util.Log
@@ -7,6 +11,8 @@ import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -48,6 +54,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -67,10 +74,8 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.MultiplePermissionsState
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import hu.ait.connect.data.category.Category
-import hu.ait.connect.ui.screen.AudioPlaybackUI
 import hu.ait.connect.ui.screen.AudioRecordViewModel
 import hu.ait.connect.ui.screen.ConfigurationViewModel
-import hu.ait.connect.ui.screen.RecordingUI
 import hu.ait.connect.ui.screen.camera.ComposeFileProvider
 import hu.ait.connect.ui.screen.category.CategoryViewModel
 import hu.ait.connect.ui.screen.components.CategoriesDropdown
@@ -142,8 +147,13 @@ fun NewPersonScreen(
     var personName by remember { mutableStateOf("") }
     var isNameValid by remember { mutableStateOf(false) }
     var additionalDetails by remember { mutableStateOf("") }
+
     var audioRecorded by remember { mutableStateOf(false) }
-    val scrollState = rememberScrollState()
+    var audioRecording by remember { mutableStateOf(false) }
+    val amplitude by audioRecordViewModel.audioAmplitude.observeAsState(0)
+
+    val scrollStateTags = rememberScrollState()
+    val scrollStateColumn = rememberScrollState()
     val scrollStateChips = rememberScrollState()
     val scrollStateDialog = rememberScrollState()
     var selectedCategory by remember { mutableStateOf<Category?>(null) }
@@ -194,79 +204,66 @@ fun NewPersonScreen(
                 ) {
                     Column(
                         modifier = modifier
-                            .padding(15.dp,0.dp)
+                            .padding(15.dp, 0.dp)
                     )
                     {
-                        OutlinedTextField(
-                            modifier = Modifier.fillMaxWidth(),
-                            label = { Text("Name") },
-                            value = "$personName",
-                            onValueChange = { personName = it },
-                            singleLine = true,
-                            isError = isNameValid && personName.isBlank(),
-                            supportingText = {
-                                if (isNameValid && personName.isBlank()) {
-                                    Text(text = "Name is required!", color = Color.Red)
+                        Column(
+                            modifier = modifier
+                                .verticalScroll(scrollStateColumn)
+                        ) {
+                            OutlinedTextField(
+                                modifier = Modifier.fillMaxWidth(),
+                                label = { Text("Name") },
+                                value = personName,
+                                onValueChange = { personName = it },
+                                singleLine = true,
+                                isError = isNameValid && personName.isBlank(),
+                                supportingText = {
+                                    if (isNameValid && personName.isBlank()) {
+                                        Text(text = "Name is required!", color = Color.Red)
+                                    }
+                                }
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            Row(
+                                modifier = Modifier.horizontalScroll(scrollStateTags)
+                            ) {
+                                tags.forEach { tagListItem ->
+                                    tagListItem.forEachIndexed { index, tag ->
+                                        AssistChip(
+                                            onClick = {
+                                                val updatedList = tagListItem.toMutableList()
+                                                updatedList[index] = tag.copy(isEditing = true)
+                                                val indexInOuterList = tags.indexOf(tagListItem)
+                                                tags[indexInOuterList] = updatedList
+                                            },
+                                            label = {
+                                                Text(tag.label)
+                                            },
+                                            leadingIcon = {
+                                                Icon(
+                                                    Icons.Filled.Add,
+                                                    contentDescription = "Add $tag.label",
+                                                    Modifier.size(AssistChipDefaults.IconSize)
+                                                )
+                                            }
+                                        )
+                                        Spacer(modifier = Modifier.width(16.dp))
+                                    }
                                 }
                             }
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
 
-                        Row(
-                            modifier = Modifier.horizontalScroll(scrollState)
-                        ) {
                             tags.forEach { tagListItem ->
                                 tagListItem.forEachIndexed { index, tag ->
-                                    AssistChip(
-                                        onClick = {
-                                            val updatedList = tagListItem.toMutableList()
-                                            updatedList[index] = tag.copy(isEditing = true)
-                                            val indexInOuterList = tags.indexOf(tagListItem)
-                                            tags[indexInOuterList] = updatedList
-                                        },
-                                        label = {
-                                            Text(tag.label)
-                                        },
-                                        leadingIcon = {
-                                            Icon(
-                                                Icons.Filled.Add,
-                                                contentDescription = "Add $tag.label",
-                                                Modifier.size(AssistChipDefaults.IconSize)
-                                            )
-                                        }
-                                    )
-                                    Spacer(modifier = Modifier.width(16.dp))
-                                }
-                            }
-                        }
-
-                        tags.forEach { tagListItem ->
-                            tagListItem.forEachIndexed { index, tag ->
-                                if (tag.isEditing) {
-                                    OutlinedTextField(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        label = { Text(tag.label) },
-                                        value = tag.value,
-                                        singleLine = true,
-                                        keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
-                                        keyboardActions = KeyboardActions(onDone = {
-                                            val updatedList = tagListItem.toMutableList()
-                                            updatedList[index] =
-                                                tag.copy(
-                                                    isEditing = false,
-                                                    isSaved = tag.value != ""
-                                                )
-                                            val indexInOuterList = tags.indexOf(tagListItem)
-                                            tags[indexInOuterList] = updatedList
-                                        }),
-                                        onValueChange = { newValue ->
-                                            val updatedList = tagListItem.toMutableList()
-                                            updatedList[index] = tag.copy(value = newValue)
-                                            val indexInOuterList = tags.indexOf(tagListItem)
-                                            tags[indexInOuterList] = updatedList
-                                        },
-                                        trailingIcon = {
-                                            IconButton(onClick = {
+                                    if (tag.isEditing) {
+                                        OutlinedTextField(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            label = { Text(tag.label) },
+                                            value = tag.value,
+                                            singleLine = true,
+                                            keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Done),
+                                            keyboardActions = KeyboardActions(onDone = {
                                                 val updatedList = tagListItem.toMutableList()
                                                 updatedList[index] =
                                                     tag.copy(
@@ -275,77 +272,105 @@ fun NewPersonScreen(
                                                     )
                                                 val indexInOuterList = tags.indexOf(tagListItem)
                                                 tags[indexInOuterList] = updatedList
-                                            }) {
-                                                Icon(
-                                                    Icons.Default.Check,
-                                                    contentDescription = "Save"
-                                                )
+                                            }),
+                                            onValueChange = { newValue ->
+                                                val updatedList = tagListItem.toMutableList()
+                                                updatedList[index] = tag.copy(value = newValue)
+                                                val indexInOuterList = tags.indexOf(tagListItem)
+                                                tags[indexInOuterList] = updatedList
+                                            },
+                                            trailingIcon = {
+                                                IconButton(onClick = {
+                                                    val updatedList = tagListItem.toMutableList()
+                                                    updatedList[index] =
+                                                        tag.copy(
+                                                            isEditing = false,
+                                                            isSaved = tag.value != ""
+                                                        )
+                                                    val indexInOuterList = tags.indexOf(tagListItem)
+                                                    tags[indexInOuterList] = updatedList
+                                                }) {
+                                                    Icon(
+                                                        Icons.Default.Check,
+                                                        contentDescription = "Save"
+                                                    )
+                                                }
                                             }
-                                        }
+                                        )
+                                    }
+                                }
+                            }
+
+                            Row(
+                                modifier = Modifier.horizontalScroll(scrollStateChips)
+                            ) {
+                                tags.flatten().filter { it.isSaved }.forEach { tag ->
+                                    AssistChip(
+                                        onClick = { },
+                                        label = { Text(tag.value) },
+                                        colors = AssistChipDefaults.assistChipColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+                                        modifier = Modifier.padding(end = 8.dp)
                                     )
                                 }
                             }
-                        }
 
-                        Row(
-                            modifier = Modifier.horizontalScroll(scrollStateChips)
-                        ) {
-                            tags.flatten().filter { it.isSaved }.forEach { tag ->
-                                AssistChip(
-                                    onClick = { },
-                                    label = { Text(tag.value) },
-                                    colors = AssistChipDefaults.assistChipColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
-                                    modifier = Modifier.padding(end = 8.dp)
+                            OutlinedTextField(
+                                modifier = Modifier.fillMaxWidth(),
+                                label = { Text("Additional Details") },
+                                value = "$additionalDetails",
+                                onValueChange = { additionalDetails = it },
+                                trailingIcon = {
+                                    Row {
+//                                        RecordingUI(
+//                                            permissionsState = permissionsState,
+//                                            audioRecordViewModel = audioRecordViewModel,
+//                                            onAudioRecorded = { audioRecorded = true },
+//                                            isRecording = { it -> audioRecording = it }
+//                                        )
+                                    TakePicture(permissionsState, context, imageUri, cameraLauncher)
+                                    }
+                                }
+                            )
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            if (audioRecording) {
+                                AudioVisualizer(
+                                    amplitude = amplitude,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(50.dp)
                                 )
                             }
-                        }
 
-                        OutlinedTextField(
-                            modifier = Modifier.fillMaxWidth(),
-                            label = { Text("Additional Details") },
-                            value = "$additionalDetails",
-                            onValueChange = { additionalDetails = it },
-                            trailingIcon = {
-                                Row {
-                                    RecordIcon(
-                                        permissionsState,
-                                        audioRecordViewModel,
-                                        audioRecorded
-                                    )
-                                    TakePicture(permissionsState, context, imageUri, cameraLauncher)
-                                }
-                            }
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        CategoriesDropdown(
-                            categories,
-                            preselected = "Uncategorized",
-                            onSelectionChanged = { selected ->
-                                Log.d("SELECTEDCAT", "NewPersonDialog: $selected")
-                                selectedCategory = selected
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(top = 10.dp),
-                            categoryViewModel = categoryViewModel
-                        )
-
-                        Spacer(modifier = Modifier.width(16.dp))
-
-                        if (audioRecorded) {
-                            AudioPlaybackUI(audioRecordViewModel = audioRecordViewModel)
-                        }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        if (hasImage && imageUri != null) {
-                            AsyncImage(
-                                model = imageUri,
-                                modifier = Modifier.size(200.dp, 200.dp),
-                                contentDescription = "Selected image",
+                            CategoriesDropdown(
+                                categories,
+                                preselected = "Uncategorized",
+                                onSelectionChanged = { selected ->
+                                    Log.d("SELECTEDCAT", "NewPersonDialog: $selected")
+                                    selectedCategory = selected
+                                },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 10.dp),
+                                categoryViewModel = categoryViewModel
                             )
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            if (audioRecorded) {
+                                AudioPlaybackUI(audioRecordViewModel = audioRecordViewModel)
+                            }
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            if (hasImage && imageUri != null) {
+                                AsyncImage(
+                                    model = imageUri,
+                                    modifier = Modifier.size(200.dp, 200.dp),
+                                    contentDescription = "Selected image",
+                                )
+                            }
                         }
 
                         Spacer(
@@ -353,54 +378,54 @@ fun NewPersonScreen(
                                 .weight(1f)
                         )
 
-                        Column() {
-                            Row(
-                                modifier = modifier
-                                    .fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceAround
+                        Row(
+                            modifier = modifier
+                                .fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceAround
+                        ) {
+                            TextButton(
+                                onClick = {
+                                    audioRecordViewModel.stopRecording()
+                                    audioRecordViewModel.stopPlaying()
+                                    navController.popBackStack()
+                                },
                             ) {
-                                TextButton(
-                                    onClick = {
-                                        audioRecordViewModel.stopRecording()
-                                        audioRecordViewModel.stopPlaying()
-                                        navController.popBackStack()
-                                    },
-                                ) {
-                                    Text(
-                                        "Cancel",
-                                        style = MaterialTheme.typography.titleMedium,
-                                    )
-                                }
+                                Text(
+                                    "Cancel",
+                                    style = MaterialTheme.typography.titleMedium,
+                                )
+                            }
 
-                                TextButton(
-                                    onClick = {
-                                        if (personName.isBlank()) {
-                                            isNameValid = true
-                                        } else {
-                                            onSave(
-                                                personViewModel,
-                                                personName,
-                                                additionalDetails,
-                                                audioRecorded,
-                                                audioRecordViewModel,
-                                                imageUri,
-                                                tags,
-                                                selectedCategory
-                                            )
-                                            navController.popBackStack()
-                                        }
-                                    },
-                                ) {
-                                    Text(
-                                        "Save",
-                                        style = MaterialTheme.typography.titleMedium,
-                                    )
-                                }
+                            TextButton(
+                                onClick = {
+                                    if (personName.isBlank()) {
+                                        isNameValid = true
+                                    } else {
+                                        onSave(
+                                            personViewModel,
+                                            personName,
+                                            additionalDetails,
+                                            audioRecorded,
+                                            audioRecordViewModel,
+                                            imageUri,
+                                            tags,
+                                            selectedCategory
+                                        )
+                                        navController.popBackStack()
+                                    }
+                                },
+                            ) {
+                                Text(
+                                    "Save",
+                                    style = MaterialTheme.typography.titleMedium,
+                                )
                             }
                         }
 
-
                     }
+
+
+
                 }
             }
 
@@ -449,26 +474,6 @@ private fun TakePicture(
             permissionsState.launchMultiplePermissionRequest()
         }) {
             Text("Request permission")
-        }
-    }
-}
-
-@OptIn(ExperimentalPermissionsApi::class)
-@Composable
-private fun RecordIcon(
-    permissionsState: MultiplePermissionsState,
-    audioRecordViewModel: AudioRecordViewModel,
-    audioRecorded: Boolean
-) {
-    var audioRecorded1 = audioRecorded
-    if (permissionsState.allPermissionsGranted) {
-        RecordingUI(audioRecordViewModel = audioRecordViewModel,
-            onAudioRecorded = { audioRecorded1 = true })
-    } else {
-        Button(onClick = {
-            permissionsState.launchMultiplePermissionRequest()
-        }) {
-            Text(text = "Request permissions")
         }
     }
 }

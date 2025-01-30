@@ -14,6 +14,10 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
@@ -24,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import hu.ait.connect.R
 import hu.ait.connect.data.person.Person
+import ClickableProfilePicture
 
 @Composable
 fun ListViewComponent(
@@ -40,7 +45,8 @@ fun ListViewComponent(
     val personImageUri = person.imageUri
 
     ListItem(
-        modifier = Modifier.padding(vertical = 8.dp)
+        modifier = Modifier
+            .padding(vertical = 8.dp)
             .clickable {
                 onNavigateToPersonDetails(personId.toString())
             },
@@ -70,38 +76,21 @@ fun ListViewComponent(
             }
         },
         leadingContent = {
-            personImageUri?.let { uri ->
-                AsyncImage(
-                    model = uri,
-                    contentDescription = "Person Image",
-                    modifier = Modifier
-                        .size(60.dp)
-                        .clip(CircleShape)
-                        .border(2.dp, Color(categoryColor), CircleShape),
-                    contentScale = ContentScale.Crop
-                )
-            } ?: run {
-                Image(
-                    painter = painterResource(R.drawable.profile_avatar),
-                    contentDescription = "Profile Picture",
-                    modifier = Modifier
-                        .size(65.dp)
-                        .clip(CircleShape)
-                        .border(2.dp, Color(categoryColor), CircleShape),
-                    contentScale = ContentScale.Crop,
-                )
-            }
-        },
-        trailingContent = {
-            Icon(
-                imageVector = Icons.Filled.Delete,
-                contentDescription = "Delete",
-                modifier = Modifier.clickable {
-                                    onDeletePerson(person)
-                },
-                tint = Color.Black
+            ClickableProfilePicture(
+                personImageUri = personImageUri,
+                categoryColor = categoryColor
             )
         },
+//        trailingContent = {
+//            Icon(
+//                imageVector = Icons.Filled.Delete,
+//                contentDescription = "Delete",
+//                modifier = Modifier.clickable {
+//                                    onDeletePerson(person)
+//                },
+//                tint = Color.Black
+//            )
+//        },
         colors = ListItemDefaults.colors(
 //            containerColor = MaterialTheme.colorScheme.surfaceVariant
         ),

@@ -1,18 +1,14 @@
 package hu.ait.connect.ui.screen.newPerson
 
+import ProfileImage
 import AudioPlaybackUI
 import AudioVisualizer
-import RecordIcon
 import RecordingUI
-import android.content.Context
+import TakePicture
 import android.net.Uri
 import android.util.Log
-import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.Orientation
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,7 +23,6 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -35,7 +30,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
@@ -43,6 +37,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconToggleButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
@@ -61,22 +56,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import coil.compose.AsyncImage
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
-import com.google.accompanist.permissions.MultiplePermissionsState
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
 import hu.ait.connect.data.category.Category
 import hu.ait.connect.ui.screen.AudioRecordViewModel
 import hu.ait.connect.ui.screen.ConfigurationViewModel
-import hu.ait.connect.ui.screen.camera.ComposeFileProvider
 import hu.ait.connect.ui.screen.category.CategoryViewModel
 import hu.ait.connect.ui.screen.components.CategoriesDropdown
 import hu.ait.connect.ui.screen.person.PersonViewModel
@@ -106,8 +98,8 @@ fun NewPersonScreen(
     var tags = remember { mutableStateListOf<List<TagData>>() }
 
     LaunchedEffect(tagList) {
-        tags.clear() // Clears the existing list
-        tags.addAll(listOf(tagList.map { TagData(label = it) })) // Adds new items to the same list
+        tags.clear()
+        tags.addAll(listOf(tagList.map { TagData(label = it) }))
     }
 
     Log.d("TAG", "NewPersonScreen tags: $tags")
@@ -155,7 +147,6 @@ fun NewPersonScreen(
     val scrollStateTags = rememberScrollState()
     val scrollStateColumn = rememberScrollState()
     val scrollStateChips = rememberScrollState()
-    val scrollStateDialog = rememberScrollState()
     var selectedCategory by remember { mutableStateOf<Category?>(null) }
 
     val permissionsState = rememberMultiplePermissionsState(
@@ -168,6 +159,9 @@ fun NewPersonScreen(
     var hasImage by remember {
         mutableStateOf(false)
     }
+    var hasPrevImage by remember {
+        mutableStateOf(false)
+    }
     var imageUri by remember {
         mutableStateOf<Uri?>(null)
     }
@@ -176,7 +170,10 @@ fun NewPersonScreen(
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture(),
         onResult = { success ->
-            hasImage = success
+            if (success) {
+                hasImage = true
+                hasPrevImage = true
+            }
         }
     )
 
@@ -185,7 +182,16 @@ fun NewPersonScreen(
         topBar = {
             Column {
                 TopAppBar(
-                    title = { Text("Add New Person") }
+                    title = {
+                        if (personName.isBlank())
+                            Text(
+                                "Add New Person"
+                            )
+                        else
+                            Text(
+                                text = personName,
+                            )
+                    }
                 )
             }
         },
@@ -211,6 +217,27 @@ fun NewPersonScreen(
                             modifier = modifier
                                 .verticalScroll(scrollStateColumn)
                         ) {
+                            if (hasImage && imageUri != null) {
+
+                                ProfileImage(
+                                    imageUri = imageUri.toString(),
+                                    contentDescription = "Selected image",
+                                    imageSize = 150,
+                                    modifier = Modifier
+                                        .size(150.dp, 150.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .align(Alignment.Start)
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                            } else if (hasPrevImage && !hasImage) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(150.dp, 150.dp)
+                                        .clip(RoundedCornerShape(10.dp))
+                                        .align(Alignment.Start)
+                                )
+                            }
+
                             OutlinedTextField(
                                 modifier = Modifier.fillMaxWidth(),
                                 label = { Text("Name") },
@@ -321,13 +348,21 @@ fun NewPersonScreen(
                                 onValueChange = { additionalDetails = it },
                                 trailingIcon = {
                                     Row {
-//                                        RecordingUI(
-//                                            permissionsState = permissionsState,
-//                                            audioRecordViewModel = audioRecordViewModel,
-//                                            onAudioRecorded = { audioRecorded = true },
-//                                            isRecording = { it -> audioRecording = it }
-//                                        )
-                                    TakePicture(permissionsState, context, imageUri, cameraLauncher)
+                                        RecordingUI(
+                                            permissionsState = permissionsState,
+                                            audioRecordViewModel = audioRecordViewModel,
+                                            onAudioRecorded = { audioRecorded = true },
+                                            isRecording = { it -> audioRecording = it }
+                                        )
+                                        TakePicture(
+                                            permissionsState = permissionsState,
+                                            context = context,
+                                            updateImageUri = { newUri ->
+                                                imageUri = newUri
+                                            },
+                                            updateHasImage = { it -> hasImage = it },
+                                            cameraLauncher = cameraLauncher
+                                        )
                                     }
                                 }
                             )
@@ -362,15 +397,6 @@ fun NewPersonScreen(
                                 AudioPlaybackUI(audioRecordViewModel = audioRecordViewModel)
                             }
 
-                            Spacer(modifier = Modifier.height(16.dp))
-
-                            if (hasImage && imageUri != null) {
-                                AsyncImage(
-                                    model = imageUri,
-                                    modifier = Modifier.size(200.dp, 200.dp),
-                                    contentDescription = "Selected image",
-                                )
-                            }
                         }
 
                         Spacer(
@@ -423,57 +449,9 @@ fun NewPersonScreen(
                         }
 
                     }
-
-
-
                 }
             }
 
         }
     )
-}
-
-@OptIn(ExperimentalPermissionsApi::class)
-@Composable
-private fun TakePicture(
-    permissionsState: MultiplePermissionsState,
-    context: Context,
-    imageUri: Uri?,
-    cameraLauncher: ManagedActivityResultLauncher<Uri, Boolean>
-) {
-    var imageUri1 = imageUri
-    if (permissionsState.allPermissionsGranted) {
-        IconButton(
-            onClick = {
-                val uri = ComposeFileProvider.getImageUri(context)
-                imageUri1 = uri
-                cameraLauncher.launch(uri)
-            }
-        ) {
-            Icon(
-                Icons.Filled.CameraAlt,
-                contentDescription = "Add image"
-            )
-        }
-
-    } else {
-        val textToShow = if (permissionsState.shouldShowRationale) {
-            // If the user has denied the permission but the rationale can be shown,
-            // then gently explain why the app requires this permission
-            "RATIONALEXPLANATION The camera is important for this app. Please grant the permission."
-        } else {
-            // If it's the first time the user lands on this feature, or the user
-            // doesn't want to be asked again for this permission, explain that the
-            // permission is required
-            "Camera permission required for this feature to be available. " +
-                    "Please grant the permission"
-        }
-        Text(textToShow)
-
-        Button(onClick = {
-            permissionsState.launchMultiplePermissionRequest()
-        }) {
-            Text("Request permission")
-        }
-    }
 }

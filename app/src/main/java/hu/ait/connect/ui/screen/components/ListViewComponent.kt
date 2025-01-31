@@ -78,7 +78,8 @@ fun ListViewComponent(
         leadingContent = {
             ClickableProfilePicture(
                 personImageUri = personImageUri,
-                categoryColor = categoryColor
+                categoryColor = categoryColor,
+                person = person,
             )
         },
 //        trailingContent = {

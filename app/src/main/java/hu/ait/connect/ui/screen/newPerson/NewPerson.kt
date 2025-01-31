@@ -3,12 +3,10 @@ package hu.ait.connect.ui.screen.newPerson
 import ProfileImage
 import AudioPlaybackUI
 import AudioVisualizer
+import CameraCaptureButton
 import RecordingUI
-import TakePicture
 import android.net.Uri
 import android.util.Log
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -102,8 +100,6 @@ fun NewPersonScreen(
         tags.addAll(listOf(tagList.map { TagData(label = it) }))
     }
 
-    Log.d("TAG", "NewPersonScreen tags: $tags")
-
     fun onSave(
         personViewModel: PersonViewModel,
         personName: String,
@@ -156,26 +152,24 @@ fun NewPersonScreen(
         )
     )
 
-    var hasImage by remember {
-        mutableStateOf(false)
-    }
     var hasPrevImage by remember {
         mutableStateOf(false)
     }
+
     var imageUri by remember {
         mutableStateOf<Uri?>(null)
     }
-    val context = LocalContext.current
 
-    val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture(),
-        onResult = { success ->
-            if (success) {
-                hasImage = true
-                hasPrevImage = true
-            }
-        }
-    )
+    var isSuccessfulCapture by remember { mutableStateOf(false) }
+
+    val onImageCaptured = { success: Boolean, uri: Uri? ->
+        isSuccessfulCapture = success
+        imageUri = uri
+    }
+
+    if (isSuccessfulCapture) {
+        hasPrevImage = true
+    }
 
     Scaffold(
         modifier = modifier.imePadding(),
@@ -217,7 +211,7 @@ fun NewPersonScreen(
                             modifier = modifier
                                 .verticalScroll(scrollStateColumn)
                         ) {
-                            if (hasImage && imageUri != null) {
+                            if (isSuccessfulCapture && imageUri != null) {
 
                                 ProfileImage(
                                     imageUri = imageUri.toString(),
@@ -229,7 +223,7 @@ fun NewPersonScreen(
                                         .align(Alignment.Start)
                                 )
                                 Spacer(modifier = Modifier.height(16.dp))
-                            } else if (hasPrevImage && !hasImage) {
+                            } else if (hasPrevImage && !isSuccessfulCapture) {
                                 Box(
                                     modifier = Modifier
                                         .size(150.dp, 150.dp)
@@ -251,6 +245,7 @@ fun NewPersonScreen(
                                     }
                                 }
                             )
+
                             Spacer(modifier = Modifier.height(16.dp))
 
                             Row(
@@ -354,14 +349,11 @@ fun NewPersonScreen(
                                             onAudioRecorded = { audioRecorded = true },
                                             isRecording = { it -> audioRecording = it }
                                         )
-                                        TakePicture(
-                                            permissionsState = permissionsState,
-                                            context = context,
-                                            updateImageUri = { newUri ->
-                                                imageUri = newUri
-                                            },
-                                            updateHasImage = { it -> hasImage = it },
-                                            cameraLauncher = cameraLauncher
+//                                        CameraCapture(
+//                                            onImageCaptured = onImageCaptured
+//                                        )
+                                        CameraCaptureButton(
+                                            onImageCaptured = onImageCaptured
                                         )
                                     }
                                 }
@@ -397,61 +389,61 @@ fun NewPersonScreen(
                                 AudioPlaybackUI(audioRecordViewModel = audioRecordViewModel)
                             }
 
-                        }
+                            Spacer(
+                                modifier = Modifier
+                                    .weight(1f)
+                            )
 
-                        Spacer(
-                            modifier = Modifier
-                                .weight(1f)
-                        )
-
-                        Row(
-                            modifier = modifier
-                                .fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceAround
-                        ) {
-                            TextButton(
-                                onClick = {
-                                    audioRecordViewModel.stopRecording()
-                                    audioRecordViewModel.stopPlaying()
-                                    navController.popBackStack()
-                                },
+                            Row(
+                                modifier = modifier
+                                    .fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceAround
                             ) {
-                                Text(
-                                    "Cancel",
-                                    style = MaterialTheme.typography.titleMedium,
-                                )
-                            }
-
-                            TextButton(
-                                onClick = {
-                                    if (personName.isBlank()) {
-                                        isNameValid = true
-                                    } else {
-                                        onSave(
-                                            personViewModel,
-                                            personName,
-                                            additionalDetails,
-                                            audioRecorded,
-                                            audioRecordViewModel,
-                                            imageUri,
-                                            tags,
-                                            selectedCategory
-                                        )
+                                TextButton(
+                                    onClick = {
+                                        audioRecordViewModel.stopRecording()
+                                        audioRecordViewModel.stopPlaying()
                                         navController.popBackStack()
-                                    }
-                                },
-                            ) {
-                                Text(
-                                    "Save",
-                                    style = MaterialTheme.typography.titleMedium,
-                                )
+                                    },
+                                ) {
+                                    Text(
+                                        "Cancel",
+                                        style = MaterialTheme.typography.titleMedium,
+                                    )
+                                }
+
+                                TextButton(
+                                    onClick = {
+                                        if (personName.isBlank()) {
+                                            isNameValid = true
+                                        } else {
+                                            onSave(
+                                                personViewModel,
+                                                personName,
+                                                additionalDetails,
+                                                audioRecorded,
+                                                audioRecordViewModel,
+                                                imageUri,
+                                                tags,
+                                                selectedCategory
+                                            )
+                                            navController.popBackStack()
+                                        }
+                                    },
+                                ) {
+                                    Text(
+                                        "Save",
+                                        style = MaterialTheme.typography.titleMedium,
+                                    )
+                                }
                             }
+
                         }
 
                     }
                 }
-            }
 
+            }
         }
     )
 }

@@ -1,5 +1,6 @@
 package hu.ait.connect.ui.screen.components
 
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -83,45 +84,10 @@ fun TagArea(
                             1.dp,
                             borderColor?.let { Color(it) } ?: Color.Transparent)
                     )
-//                    Spacer(modifier = Modifier.defaultMinSize())
                 }
             }
         }
     }
-
-    //    if (tags == null || tags.isEmpty()) {
-//        Text("No memory cues added. Click below to add memory cues", fontStyle = FontStyle.Italic)
-//        FlowRow(
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .padding(2.dp),
-//        ) {
-//            taglist?.forEach { tag ->
-//                if (tag != "") {
-//                    AssistChip(
-//                        onClick = {},
-//                        label = {
-//                            Text(
-//                                tag.toString(),
-//                                style = MaterialTheme.typography.bodyMedium.copy(
-//                                    fontSize = 16.sp,
-//                                ),
-//                            )
-//                        },
-//                        leadingIcon = {
-//                            Icon(
-//                                Icons.Filled.Add,
-//                                contentDescription = "$tag",
-//                                Modifier.size(AssistChipDefaults.IconSize)
-//                            )
-//                        }
-//                    )
-//                    Spacer(modifier = Modifier.width(12.dp))
-//                }
-//            }
-//        }
-//        return
-//    }
 }
 
 @Composable
@@ -158,110 +124,142 @@ fun CategoriesDropdown(
                 Icons.Outlined.ArrowDropDown, null, modifier =
                 Modifier.padding(8.dp)
             )
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false },
-                modifier = Modifier.fillMaxWidth(0.70f)
-            ) {
-                if (!addCategory) {
-                    categoryList.value.forEach { listEntry ->
-                        DropdownMenuItem(
-                            onClick = {
-                                selected = listEntry.name
-                                expanded = false
-                                onSelectionChanged(listEntry)
-                            },
-                            text = {
-                                Text(
-                                    text = listEntry.name,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .align(Alignment.Start)
-                                        .padding(0.dp)
-                                )
-                            },
-                        )
-                    }
 
-                    DropdownMenuItem(
-                        onClick = {
-                            addCategory = true
-                            expanded = false // Close the dropdown when the button is clicked
-                        },
-                        text = {
-                            TextButton(
-                                onClick = {
-                                    addCategory = true
-                                },
-                                modifier = Modifier.padding(0.dp)
-                            ) {
-                                Text(
-                                    text = "Add category",
-                                    style = TextStyle(
-                                        fontSize = 14.sp
-                                    )
-                                )
-                            }
-                        }
-
-                    )
-
-                } else
-                    Column(
-                    ) {
-                        OutlinedTextField(
-                            modifier = Modifier.fillMaxWidth(),
-                            label = { Text("Category Name") },
-                            value = categoryName,
-                            onValueChange = {
-                                categoryName = it
-                                selected = categoryName
-                            },
-                        )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End
-                        ) {
-                            TextButton(
-                                onClick = {
-                                    categoryViewModel.addCategory(
-                                        categoryName = categoryName,
-                                        categoryColor = selectedColor
-                                    ) {
-                                        newCategory ->
-                                        onSelectionChanged(newCategory)
-                                        addCategory = false
-                                    }
-                                },
-                                enabled = categoryName.isNotEmpty()
-                            ) {
-                                Text("Save")
-                            }
-                            TextButton(
-                                onClick = {
-                                    addCategory = false
-                                },
-                            ) {
-                                Text("Cancel")
-                            }
-                        }
-                        Text(
-                            text = ("Selected Color"),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(20.dp)
-                                .background(selectedColor),
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        AdvancedColorPicker(
-                            onColorChanged = { color ->
-                                selectedColor = color
-                            },
-                        )
-                    }
-            }
+            CategorySelectionMenu(
+                expanded,
+                addCategory,
+                categoryList,
+                selected,
+                onSelectionChanged,
+                categoryName,
+                categoryViewModel,
+                selectedColor
+            )
 
         }
+    }
+}
+
+@Composable
+fun CategorySelectionMenu(
+    expanded: Boolean,
+    addCategory: Boolean,
+    categoryList: State<List<Category>>,
+    selected: String,
+    onSelectionChanged: (myData: Category) -> Unit,
+    categoryName: String,
+    categoryViewModel: CategoryViewModel,
+    selectedColor: Color,
+    withAddCategory: Boolean = true,
+    onDismiss: () -> Unit = {}
+) {
+    var expanded1 = expanded
+    var addCategory1 = addCategory
+    var selected1 = selected
+    var categoryName1 = categoryName
+    var selectedColor1 = selectedColor
+
+    DropdownMenu(
+        expanded = expanded1,
+        onDismissRequest = { onDismiss() },
+        modifier = Modifier.fillMaxWidth(0.70f)
+    ) {
+        if (!addCategory1) {
+            categoryList.value.forEach { listEntry ->
+                DropdownMenuItem(
+                    onClick = {
+                        selected1 = listEntry.name
+                        expanded1 = false
+                        onSelectionChanged(listEntry)
+                    },
+                    text = {
+                        Text(
+                            text = listEntry.name,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .align(Alignment.Start)
+                                .padding(0.dp)
+                        )
+                    },
+                )
+            }
+
+            if (withAddCategory) {
+                DropdownMenuItem(
+                    onClick = {
+                        addCategory1 = true
+                        expanded1 = false
+                    },
+                    text = {
+                        TextButton(
+                            onClick = {
+                                addCategory1 = true
+                            },
+                            modifier = Modifier.padding(0.dp)
+                        ) {
+                            Text(
+                                text = "Add category",
+                                style = TextStyle(
+                                    fontSize = 14.sp
+                                )
+                            )
+                        }
+                    }
+                )
+            }
+
+        } else
+            Column(
+            ) {
+                OutlinedTextField(
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Category Name") },
+                    value = categoryName1,
+                    onValueChange = {
+                        categoryName1 = it
+                        selected1 = categoryName1
+                    },
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(
+                        onClick = {
+                            categoryViewModel.addCategory(
+                                categoryName = categoryName1,
+                                categoryColor = selectedColor1
+                            ) { newCategory ->
+                                onSelectionChanged(newCategory)
+                                addCategory1 = false
+                            }
+                        },
+                        enabled = categoryName1.isNotEmpty()
+                    ) {
+                        Text("Save")
+                    }
+                    TextButton(
+                        onClick = {
+                            addCategory1 = false
+                        },
+                    ) {
+                        Text("Cancel")
+                    }
+                }
+                Text(
+                    text = ("Selected Color"),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(20.dp)
+                        .background(selectedColor1),
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                AdvancedColorPicker(
+                    onColorChanged = { color ->
+                        selectedColor1 = color
+                    },
+                )
+            }
     }
 }
 

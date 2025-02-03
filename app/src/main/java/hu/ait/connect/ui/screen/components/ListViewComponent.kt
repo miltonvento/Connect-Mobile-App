@@ -29,71 +29,78 @@ import coil.compose.AsyncImage
 import hu.ait.connect.R
 import hu.ait.connect.data.person.Person
 import ClickableProfilePicture
+import android.util.Log
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Box
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ListViewComponent(
     person: Person,
-    onDeletePerson: (Person) -> Unit,
-    onNavigateToPersonDetails: (String) -> Unit,
     categoryColor: Int,
+    isSelected: Boolean = false,
+    onLongPress: () -> Unit,
+    onClick: () -> Unit
 ) {
-    var personId = person.id
     var personName = person.name
     var personDescription = person.description
-    var personAudio = person.audio
     var personTags = person.tags
     val personImageUri = person.imageUri
 
-    ListItem(
-        modifier = Modifier
-            .padding(vertical = 8.dp)
-            .clickable {
-                onNavigateToPersonDetails(personId.toString())
-            },
-        headlineContent = {
-            Text(
-                text = personName,
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        },
-        supportingContent = {
-            if (
-                personTags?.isNotEmpty() == true
-            ) {
-                TagArea(
-                    tags = personTags,
-                    borderColor = categoryColor
-                )
-            } else {
-                Text(
-                    personDescription,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-        },
-        leadingContent = {
-            ClickableProfilePicture(
-                personImageUri = personImageUri,
-                categoryColor = categoryColor,
-                person = person,
-            )
-        },
-//        trailingContent = {
-//            Icon(
-//                imageVector = Icons.Filled.Delete,
-//                contentDescription = "Delete",
-//                modifier = Modifier.clickable {
-//                                    onDeletePerson(person)
-//                },
-//                tint = Color.Black
-//            )
-//        },
-        colors = ListItemDefaults.colors(
-//            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        ),
+    val interactionSource = remember { MutableInteractionSource() }
+
+    val backgroundColor by animateColorAsState(
+        if (isSelected) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surface,
+        label = "SelectionBackground"
     )
-}
+        ListItem(  modifier = Modifier
+            .padding(vertical = 8.dp)
+            .combinedClickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick,
+                onLongClick = onLongPress
+            ),
+            colors = ListItemDefaults.colors(
+                containerColor = backgroundColor
+            ),
+            headlineContent = {
+                Text(
+                    text = personName,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            },
+            supportingContent = {
+                if (
+                    personTags?.isNotEmpty() == true
+                ) {
+                    TagArea(
+                        tags = personTags,
+                        borderColor = categoryColor
+                    )
+                } else {
+                    Text(
+                        personDescription,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
+            leadingContent = {
+                ClickableProfilePicture(
+                    personImageUri = personImageUri,
+                    categoryColor = categoryColor,
+                    person = person,
+                )
+            },
+//        colors = ListItemDefaults.colors(
+//        ),
+        )
+    }

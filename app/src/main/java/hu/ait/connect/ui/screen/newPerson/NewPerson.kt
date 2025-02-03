@@ -374,7 +374,6 @@ fun NewPersonScreen(
                                 categories,
                                 preselected = "Uncategorized",
                                 onSelectionChanged = { selected ->
-                                    Log.d("SELECTEDCAT", "NewPersonDialog: $selected")
                                     selectedCategory = selected
                                 },
                                 modifier = Modifier

@@ -100,17 +100,17 @@ fun CategoryDetailsScreen(
                 .padding(16.dp)
         ) {
             items(people.size) { index ->
-                ListViewComponent(
-                    person = people[index],
-                    categoryColor = category.color,
-                    onDeletePerson = { person ->
-                        personViewModel.deletePerson(person)
-                    },
-                    onNavigateToPersonDetails = {
-                        personId ->
-                        navController.navigate("person_details/$personId")
-                    }
-                )
+//                ListViewComponent(
+//                    person = people[index],
+//                    categoryColor = category.color,
+//                    onDeletePerson = { person ->
+//                        personViewModel.deletePerson(person)
+//                    },
+//                    onNavigateToPersonDetails = {
+//                        personId ->
+//                        navController.navigate("person_details/$personId")
+//                    }
+//                )
                 HorizontalDivider(
                     modifier = Modifier.padding(vertical = 8.dp),
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)

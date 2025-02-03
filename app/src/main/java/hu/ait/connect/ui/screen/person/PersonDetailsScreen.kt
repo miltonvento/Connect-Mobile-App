@@ -1,6 +1,7 @@
 package hu.ait.connect.ui.screen.person
 
 import AudioPlaybackUI
+import ClickableProfilePicture
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -75,7 +76,6 @@ fun PersonDetailsScreen(
     var personImageUri by rememberSaveable { mutableStateOf<String?>(null) }
     var personDescription by rememberSaveable { mutableStateOf("") }
     var personAudio by rememberSaveable { mutableStateOf(ByteArray(0)) }
-    var cornerRadius = 20
 
     if (person.value == null) {
         Text(text = "Loading person details...")
@@ -104,7 +104,6 @@ fun PersonDetailsScreen(
                         }
                     },
                     actions = {
-                        // Content placed in the top-right corner
                         IconButton(onClick = {
                             personViewModel.deletePerson(person.value!!)
                             navController.popBackStack()
@@ -130,26 +129,12 @@ fun PersonDetailsScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier.padding(bottom = 4.dp)
                     ) {
-                        personImageUri?.let { uri ->
-                            AsyncImage(
-                                model = uri,
-                                contentDescription = "Person Image",
-                                modifier = Modifier
-                                    .size(100.dp) // Size of the circular image
-                                    .clip(RoundedCornerShape(cornerRadius.dp)), // Makes the image circular
-                                contentScale = ContentScale.Crop // Crop to fit inside the circle
-                            )
-                        } ?: run {
-                            Image(
-                                painter = painterResource(R.drawable.profile_avatar),
-                                contentDescription = "Profile Picture",
-                                modifier = Modifier
-                                    .size(100.dp) // Size of the circular image
-                                    .clip(RoundedCornerShape(cornerRadius.dp)), // Makes the image circular
-                                contentScale = ContentScale.Crop // Crop to fit inside the circle
-                            )
-                        }
-
+                        ClickableProfilePicture(
+                            personImageUri = personImageUri,
+                            person = person.value!!,
+                            size = 100,
+                            cornerRadius = 20
+                        )
                         Spacer(modifier = Modifier.width(20.dp)) // Space between image and text
                         Text(
                             text = "$personName",
@@ -196,8 +181,6 @@ fun PersonDetailsScreen(
                     }
 
                     PersonInfor(personViewModel, person)
-                    Text(person.value.toString())
-
                 }
             }
         )

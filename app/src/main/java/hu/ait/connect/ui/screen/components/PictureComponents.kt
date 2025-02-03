@@ -171,18 +171,21 @@ fun ProfilePicturePlaceholder(
 fun ClickableProfilePicture(
     person: Person,
     personImageUri: String?,
-    categoryColor: Int,
+    categoryColor: Int = Color.Transparent.toArgb(),
+    size: Int = 60,
+    cornerRadius: Int = 50
 ) {
     var showimageDialog by remember { mutableStateOf(false) }
 
     ProfileImage(
         imageUri = personImageUri,
         contentDescription = "Person Image",
-        modifier = Modifier
-            .size(60.dp)
-            .clip(CircleShape)
-            .border(2.dp, Color(categoryColor), CircleShape)
-            .clickable { showimageDialog = true }
+        modifier =
+            Modifier
+                .size(size.dp)
+                .clip(RoundedCornerShape(cornerRadius  ))
+                .border(2.dp, Color(categoryColor), CircleShape)
+                .clickable { showimageDialog = true }
     )
 
     if (showimageDialog) {
@@ -266,7 +269,7 @@ fun FullProfileImageDialog(
                             onClick = {
                                 updateShowDialog(false)
                             },
-                            ) {
+                        ) {
                             Text(
                                 "Close",
                                 style = MaterialTheme.typography.titleMedium,

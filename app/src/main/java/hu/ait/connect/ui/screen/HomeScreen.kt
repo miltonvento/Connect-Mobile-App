@@ -1,5 +1,6 @@
 package hu.ait.connect.ui.screen
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -33,16 +34,26 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.GroupAdd
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ScrollableTabRow
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TextField
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.graphics.toArgb
 import androidx.navigation.NavHostController
+import hu.ait.connect.data.category.Category
+import hu.ait.connect.data.person.Person
 import hu.ait.connect.ui.screen.category.CategoryViewModel
+import hu.ait.connect.ui.screen.components.CategorySelectionMenu
 import hu.ait.connect.ui.screen.components.ListViewComponent
 import hu.ait.connect.ui.screen.person.PersonViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,8 +65,11 @@ fun HomeScreen(
     onNavigateToPersonDetails: (String) -> Unit,
     navController: NavHostController
 ) {
+
     val peopleList = viewModel.getAllPeople().collectAsState(emptyList())
-//    var showAddDialog by rememberSaveable { mutableStateOf(false) }
+
+    var selectedPersons = remember { mutableStateListOf<Person>() }
+    var selectionMode by remember { mutableStateOf(false) }
 
     val configuration = configurationViewModel.getConfig().collectAsState(initial = null)
 //    var tagList = configuration.value?.taglist
@@ -64,17 +78,32 @@ fun HomeScreen(
     var categoryNames = categories.value.map { it.name }
     val tabs = listOf("All") + categoryNames
     var selectedTabIndex by remember { mutableStateOf(0) }
+    var showCategorySelectionMenu by rememberSaveable { mutableStateOf(false) }
+
+    val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     var isSearching by rememberSaveable { mutableStateOf(false) }
     val searchQuery by viewModel.searchQuery.collectAsState()
 
     Scaffold(
+        snackbarHost = {
+            SnackbarHost(snackbarHostState) { data ->
+                Snackbar(
+                    snackbarData = data,
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        },
         modifier = modifier,
         topBar = {
             Column {
                 TopAppBar(
-                    title = { Text("Connect")
-                        if (isSearching) {
+                    title = {
+                        if (selectionMode) {
+                            Text("Selected: ${selectedPersons.size}")
+                        } else if (isSearching) {
                             TextField(
                                 value = searchQuery,
                                 onValueChange = { viewModel.updateSearchQuery(it) },
@@ -90,7 +119,7 @@ fun HomeScreen(
                         } else {
                             Text("Connect")
                         }
-                            },
+                    },
                     colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,
                         titleContentColor = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -98,15 +127,73 @@ fun HomeScreen(
                         actionIconContentColor = MaterialTheme.colorScheme.onSecondaryContainer
                     ),
                     actions = {
-                        IconButton(onClick = {
-                            isSearching = !isSearching
-                            if (!isSearching) viewModel.updateSearchQuery("")
-                        }) {
-                            Icon(
-                                imageVector = if (isSearching) Icons.Filled.Close else Icons.Filled.Search,
-                                contentDescription = if (isSearching) "Close Search" else "Search"
-                            )
+
+                        if (selectionMode) {
+                            IconButton(onClick = {
+                                showCategorySelectionMenu = !showCategorySelectionMenu
+                            })
+                            {
+                                Icon(
+                                    imageVector = Icons.Filled.GroupAdd,
+                                    contentDescription = "Add to category"
+                                )
+                            }
+
+                            IconButton(onClick = {
+                                viewModel.deletePeopleByIds(
+                                    selectedPersons.map { it.id }.toList()
+                                )
+                                selectedPersons.clear()
+                                selectionMode = false
+                            })
+
+                            {
+                                Icon(
+                                    imageVector = Icons.Filled.Delete,
+                                    contentDescription = "Delete"
+                                )
+                            }
+
+                            if (showCategorySelectionMenu) {
+                                CategorySelectionMenu(
+                                    expanded = showCategorySelectionMenu,
+                                    addCategory = false,
+                                    categoryList = categories,
+                                    selected = "Select Category",
+                                    onSelectionChanged = { selectedCategory ->
+                                        selectedPersons.forEach { person ->
+                                            viewModel.editPerson(
+                                                person.copy(categoryId = selectedCategory.id)
+                                            )
+                                        }
+                                        coroutineScope.launch {
+                                            snackbarHostState.showSnackbar("Added to ${selectedCategory.name}")
+                                        }
+                                        selectedPersons.clear()
+                                        showCategorySelectionMenu = false
+                                        selectionMode = false
+                                    },
+                                    categoryName = "",
+                                    categoryViewModel = categoryViewModel,
+                                    selectedColor = Color.Transparent,
+                                    withAddCategory = false,
+                                    onDismiss = { showCategorySelectionMenu = false }
+                                )
+                            }
+
+                        } else {
+                            IconButton(onClick = {
+                                isSearching = !isSearching
+                                if (!isSearching) viewModel.updateSearchQuery("")
+                            }) {
+                                Icon(
+                                    imageVector = if (isSearching) Icons.Filled.Close else Icons.Filled.Search,
+                                    contentDescription = if (isSearching) "Close Search" else "Search"
+                                )
+                            }
                         }
+
+
                     }
                 )
                 if (!isSearching) {
@@ -145,7 +232,8 @@ fun HomeScreen(
             val peopleToDisplay = remember(peopleList.value, searchQuery, selectedTabIndex) {
                 if (isSearching) {
                     peopleList.value.filter {
-                        val matchesCategory = if (selectedTabIndex == 0) true else it.categoryId == categories.value[selectedTabIndex - 1].id
+                        val matchesCategory =
+                            if (selectedTabIndex == 0) true else it.categoryId == categories.value[selectedTabIndex - 1].id
                         val matchesSearch = searchQuery.isBlank() ||
                                 it.name.contains(searchQuery, true) ||
                                 it.description.contains(searchQuery, true) ||
@@ -163,7 +251,8 @@ fun HomeScreen(
 
             LazyColumn(
                 contentPadding = innerpadding,
-                modifier = modifier.padding(8.dp)) {
+                modifier = modifier.padding(8.dp)
+            ) {
                 if (peopleToDisplay.isEmpty()) {
                     item {
                         Text(
@@ -174,23 +263,30 @@ fun HomeScreen(
                         )
                     }
                 } else {
-                    itemsIndexed(peopleToDisplay) {index, person ->
+                    itemsIndexed(peopleToDisplay) { index, person ->
                         ListViewComponent(
                             person = person,
-                            onDeletePerson = { person ->
-                                    viewModel.deletePerson(person)
-                                },
                             categoryColor = Color.Transparent.toArgb(),
-                            onNavigateToPersonDetails = onNavigateToPersonDetails
+                            onLongPress = {
+                                if (!selectionMode) selectionMode = true
+                                if (!selectedPersons.contains(person)) {
+                                    selectedPersons.add(person)
+                                }
+                            },
+                            onClick = {
+                                if (selectionMode) {
+                                    if (selectedPersons.contains(person)) {
+                                        selectedPersons.remove(person)
+                                        if (selectedPersons.isEmpty()) selectionMode = false
+                                    } else {
+                                        selectedPersons.add(person)
+                                    }
+                                } else {
+                                    onNavigateToPersonDetails(person.id.toString())
+                                }
+                            },
+                            isSelected = selectedPersons.contains(person)
                         )
-
-                        if (index < peopleToDisplay.lastIndex) {
-                            HorizontalDivider(
-                                modifier = Modifier.padding(vertical = 4.dp),
-                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
-                            )
-                        }
-
                     }
                 }
             }
@@ -198,58 +294,3 @@ fun HomeScreen(
         }
     )
 }
-
-//@Composable
-//fun RecordingUI(audioRecordViewModel: AudioRecordViewModel, onAudioRecorded: () -> Unit) {
-//    val amplitude by audioRecordViewModel.audioAmplitude.observeAsState(0)
-//    var isRecording by remember { mutableStateOf(false) }
-//
-//    Row(
-//        modifier = Modifier.fillMaxWidth(),
-//        verticalAlignment = Alignment.CenterVertically
-//    ) {
-//        IconToggleButton(
-//            checked = isRecording,
-//            onCheckedChange = { checked ->
-//                isRecording = checked
-//                if (checked) {
-//                    audioRecordViewModel.startRecording()
-//                } else {
-//                    audioRecordViewModel.stopRecording()
-//                    onAudioRecorded()
-//                }
-//            }
-//        ) {
-//            Icon(
-//                imageVector = if (isRecording) Icons.Filled.Stop else Icons.Filled.Mic,
-//                contentDescription = if (isRecording) "Stop Recording" else "Start Recording",
-//                modifier = Modifier.size(ButtonDefaults.IconSize)
-//            )
-//        }
-//
-//        Spacer(modifier = Modifier.height(16.dp))
-//        Column() {
-//            Text(
-//                text = if (!isRecording) "Press to Record" else "",
-//                style = MaterialTheme.typography.bodyMedium
-//            )
-//
-//            Spacer(modifier = Modifier.height(16.dp))
-//
-//            if (isRecording) {
-//                // Show visualizer while recording
-//                AudioVisualizer(
-//                    amplitude = amplitude,
-//                    modifier = Modifier
-//                        .fillMaxWidth()
-//                        .height(50.dp)
-//                )
-//            }
-//        }
-//    }
-//}
-
-
-
-
-

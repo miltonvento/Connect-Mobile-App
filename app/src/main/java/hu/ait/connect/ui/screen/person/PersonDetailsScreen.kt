@@ -2,6 +2,7 @@ package hu.ait.connect.ui.screen.person
 
 import AudioPlaybackUI
 import ClickableProfilePicture
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -171,9 +172,11 @@ fun PersonDetailsScreen(
                             color = Color.Gray
                         ),
                     )
-                    Spacer(Modifier.height(5.dp))
 
-                    if (personAudio != null){
+                    Spacer(Modifier.height(5.dp))
+                    Log.d("PersonDetailsScreen", "Person Details: $person")
+
+                    if (personAudio.size != 0){
                         audioRecordViewModel.saveAudioFileFromByteArray(personAudio, "$personId, audio.3gp")
                         if (audioRecordViewModel.isFileExists("$personId, audio.3gp")) {
                             AudioPlaybackUI(audioRecordViewModel = audioRecordViewModel, audioFilePath = "$personId, audio.3gp")

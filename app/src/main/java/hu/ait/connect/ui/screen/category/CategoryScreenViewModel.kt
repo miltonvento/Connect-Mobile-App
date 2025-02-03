@@ -50,8 +50,9 @@ class CategoryViewModel @Inject constructor(
     fun addCategory(categoryName: String, categoryColor: Color, onComplete: (Category) -> Unit) {
         viewModelScope.launch {
             val category = Category(name = categoryName, color = categoryColor.toArgb())
-            categoryDAO.insert(category)
-            onComplete(category)
+            val insertedId = categoryDAO.insert(category)
+            val newCategory = categoryDAO.getCategoryById(insertedId.toInt())
+            onComplete(newCategory)
         }
     }
 

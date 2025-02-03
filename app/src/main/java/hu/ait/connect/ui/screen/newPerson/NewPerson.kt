@@ -372,14 +372,13 @@ fun NewPersonScreen(
 
                             CategoriesDropdown(
                                 categories,
-                                preselected = "Uncategorized",
+                                selectedCategory = selectedCategory,
                                 onSelectionChanged = { selected ->
                                     selectedCategory = selected
                                 },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(top = 10.dp),
-                                categoryViewModel = categoryViewModel
                             )
 
                             Spacer(modifier = Modifier.height(16.dp))

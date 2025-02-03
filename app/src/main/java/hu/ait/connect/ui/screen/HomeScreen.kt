@@ -157,11 +157,10 @@ fun HomeScreen(
                             if (showCategorySelectionMenu) {
                                 CategorySelectionMenu(
                                     expanded = showCategorySelectionMenu,
-                                    addCategory = false,
                                     categoryList = categories,
-                                    selected = "Select Category",
                                     onSelectionChanged = { selectedCategory ->
                                         selectedPersons.forEach { person ->
+                                            Log.d("NEW CATEGORY", "HomeScreen: $selectedCategory for ${person.name}")
                                             viewModel.editPerson(
                                                 person.copy(categoryId = selectedCategory.id)
                                             )
@@ -173,11 +172,9 @@ fun HomeScreen(
                                         showCategorySelectionMenu = false
                                         selectionMode = false
                                     },
-                                    categoryName = "",
                                     categoryViewModel = categoryViewModel,
-                                    selectedColor = Color.Transparent,
-                                    withAddCategory = false,
-                                    onDismiss = { showCategorySelectionMenu = false }
+                                    withAddCategory = true,
+                                    setExpanded = { showCategorySelectionMenu = it }
                                 )
                             }
 

@@ -11,10 +11,14 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.ArrowDropDown
@@ -41,6 +45,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import hu.ait.connect.data.category.Category
 import hu.ait.connect.ui.screen.category.CategoryViewModel
 import hu.ait.connect.ui.screen.category.SliderWithLabel
@@ -93,17 +98,14 @@ fun TagArea(
 @Composable
 fun CategoriesDropdown(
     categoryList: State<List<Category>>,
-    preselected: String,
+    selectedCategory: Category?,
     onSelectionChanged: (myData: Category) -> Unit,
     modifier: Modifier = Modifier,
-    categoryViewModel: CategoryViewModel
+    categoryViewModel: CategoryViewModel = hiltViewModel(),
 ) {
 
-    var selected by remember { mutableStateOf(preselected) }
     var expanded by remember { mutableStateOf(false) }
-    var addCategory by remember { mutableStateOf(false) }
-    var categoryName by remember { mutableStateOf("") }
-    var selectedColor by remember { mutableStateOf<Color>(Color.LightGray) }
+//    var categoryName by remember { mutableStateOf("") }
 
     OutlinedCard(
         modifier = modifier.clickable {
@@ -115,7 +117,7 @@ fun CategoriesDropdown(
             verticalAlignment = Alignment.Top,
         ) {
             Text(
-                text = selected,
+                text = selectedCategory?.name ?: "Select Category",
                 modifier = Modifier
                     .weight(1f)
                     .padding(horizontal = 16.dp, vertical = 8.dp)
@@ -126,14 +128,11 @@ fun CategoriesDropdown(
             )
 
             CategorySelectionMenu(
-                expanded,
-                addCategory,
-                categoryList,
-                selected,
-                onSelectionChanged,
-                categoryName,
-                categoryViewModel,
-                selectedColor
+                expanded = expanded,
+                categoryList = categoryList,
+                onSelectionChanged = onSelectionChanged,
+                categoryViewModel = categoryViewModel,
+                setExpanded = { expanded = it }
             )
 
         }
@@ -143,34 +142,32 @@ fun CategoriesDropdown(
 @Composable
 fun CategorySelectionMenu(
     expanded: Boolean,
-    addCategory: Boolean,
     categoryList: State<List<Category>>,
-    selected: String,
     onSelectionChanged: (myData: Category) -> Unit,
-    categoryName: String,
     categoryViewModel: CategoryViewModel,
-    selectedColor: Color,
     withAddCategory: Boolean = true,
-    onDismiss: () -> Unit = {}
+    setExpanded: (Boolean) -> Unit = {}
 ) {
-    var expanded1 = expanded
-    var addCategory1 = addCategory
-    var selected1 = selected
-    var categoryName1 = categoryName
-    var selectedColor1 = selectedColor
+    var categoryName by remember { mutableStateOf("") }
+    var selectedColor by remember { mutableStateOf<Color>(Color.LightGray) }
+
+    var isAddCategoryExpanded by remember { mutableStateOf(false) }
 
     DropdownMenu(
-        expanded = expanded1,
-        onDismissRequest = { onDismiss() },
+        expanded = expanded,
+        onDismissRequest = {
+            setExpanded(false)
+            isAddCategoryExpanded = false
+        },
         modifier = Modifier.fillMaxWidth(0.70f)
     ) {
-        if (!addCategory1) {
+
+        if (!isAddCategoryExpanded) {
             categoryList.value.forEach { listEntry ->
                 DropdownMenuItem(
                     onClick = {
-                        selected1 = listEntry.name
-                        expanded1 = false
                         onSelectionChanged(listEntry)
+                        setExpanded(false)
                     },
                     text = {
                         Text(
@@ -187,76 +184,66 @@ fun CategorySelectionMenu(
             if (withAddCategory) {
                 DropdownMenuItem(
                     onClick = {
-                        addCategory1 = true
-                        expanded1 = false
+                        isAddCategoryExpanded = true
                     },
                     text = {
-                        TextButton(
-                            onClick = {
-                                addCategory1 = true
-                            },
-                            modifier = Modifier.padding(0.dp)
-                        ) {
-                            Text(
-                                text = "Add category",
-                                style = TextStyle(
-                                    fontSize = 14.sp
-                                )
+                        Text(
+                            text = "Add category",
+                            style = TextStyle(
+                                fontSize = 14.sp
                             )
-                        }
+                        )
                     }
                 )
             }
-
         } else
             Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .imePadding()
+                    .padding(8.dp),
             ) {
                 OutlinedTextField(
                     modifier = Modifier.fillMaxWidth(),
                     label = { Text("Category Name") },
-                    value = categoryName1,
+                    value = categoryName,
                     onValueChange = {
-                        categoryName1 = it
-                        selected1 = categoryName1
+                        categoryName = it
                     },
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.End
+
                 ) {
                     TextButton(
                         onClick = {
                             categoryViewModel.addCategory(
-                                categoryName = categoryName1,
-                                categoryColor = selectedColor1
-                            ) { newCategory ->
+                                categoryName = categoryName,
+                                categoryColor = selectedColor
+                            ) {
+                                newCategory ->
                                 onSelectionChanged(newCategory)
-                                addCategory1 = false
+                                setExpanded(false)
+                                isAddCategoryExpanded = false
                             }
                         },
-                        enabled = categoryName1.isNotEmpty()
+                        enabled = categoryName.isNotEmpty()
                     ) {
                         Text("Save")
                     }
                     TextButton(
                         onClick = {
-                            addCategory1 = false
+                            isAddCategoryExpanded = false
                         },
                     ) {
                         Text("Cancel")
                     }
                 }
-                Text(
-                    text = ("Selected Color"),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(20.dp)
-                        .background(selectedColor1),
-                )
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 AdvancedColorPicker(
                     onColorChanged = { color ->
-                        selectedColor1 = color
+                        selectedColor = color
                     },
                 )
             }
@@ -274,12 +261,26 @@ fun AdvancedColorPicker(
     val selectedColor = Color.hsl(hue, saturation, lightness)
     onColorChanged(selectedColor)
 
-    Column() {
-        Text(
-            text = "Adjust color using slider below:",
-            fontStyle = FontStyle.Italic,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
+    Column(
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+        ){
+            Text(
+                text = "Adjust color using slider below:",
+                fontStyle = FontStyle.Italic,
+                modifier = Modifier.padding(bottom = 8.dp, end = 8.dp)
+            )
+            Box(
+            ){
+                Spacer(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .background(selectedColor, shape = CircleShape)
+                )
+            }
+        }
+
         SliderWithLabel(
             value = hue,
             valueRange = 0f..360f,
@@ -287,139 +288,3 @@ fun AdvancedColorPicker(
         )
     }
 }
-
-//@Composable
-//fun PersonCard(
-//    categoryColor: Int,
-//    person: Person,
-//    onDeletePerson: (Person) -> Unit,
-//    onNavigateToPersonDetails: (String) -> Unit,
-//    audioRecordViewModel: AudioRecordViewModel = viewModel(factory = AudioRecordViewModel.factory),
-//) {
-//    var personId = person.id
-//    var personName = person.name
-//    var personDescription = person.description
-//    var personAudio = person.audio
-//    var personTags = person.tags
-//    val personImageUri = person.imageUri
-//
-//    var expanded by remember { mutableStateOf(false) }
-//
-//    Card(
-//        colors = CardDefaults.cardColors(
-//            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-//        ),
-//        shape = RoundedCornerShape(20.dp),
-//        elevation = CardDefaults.cardElevation(
-//            defaultElevation = 5.dp
-//        ),
-//        modifier = Modifier
-//            .padding(5.dp)
-//            .fillMaxWidth()
-//            .clickable {
-//                onNavigateToPersonDetails(personId.toString())
-//            },
-//    ) {
-//        Column(
-//            modifier = Modifier
-//                .padding(20.dp)
-//                .animateContentSize()
-//        ) {
-//
-//            Row(
-//                verticalAlignment = Alignment.CenterVertically
-//            ) {
-//
-//                personImageUri?.let { uri ->
-//                    AsyncImage(
-//                        model = uri,
-//                        contentDescription = "Person Image",
-//                        modifier = Modifier
-//                            .size(60.dp)
-//                            .clip(CircleShape)
-//                            .border(2.dp, Color(categoryColor), CircleShape),
-//                        contentScale = ContentScale.Crop
-//                    )
-//                } ?: run {
-//                    Image(
-//                        painter = painterResource(R.drawable.profile_avatar),
-//                        contentDescription = "Profile Picture",
-//                        modifier = Modifier
-//                            .size(65.dp)
-//                            .clip(CircleShape)
-//                            .border(2.dp, Color(categoryColor), CircleShape),
-//                        contentScale = ContentScale.Crop,
-//                    )
-//                }
-//
-//                Spacer(modifier = Modifier.width(8.dp))
-//
-//                Column(
-//                    modifier = Modifier.weight(1f)
-//                ) {
-//
-//                    Text(
-//                        text = "$personName",
-//                        fontSize = 22.sp,
-//                    )
-//                    Spacer(modifier = Modifier.width(8.dp))
-//
-//                    if (
-//                        personTags?.isNotEmpty() == true
-//                    ) {
-//                        TagArea(
-//                            tags = personTags,
-//                            borderColor = categoryColor
-//                        )
-//                    } else {
-//                        Text(
-//                            personDescription,
-//                            maxLines = 2
-//                        )
-//                    }
-//                    if (expanded) {
-//                        if (personAudio != null) {
-//                            audioRecordViewModel.saveAudioFileFromByteArray(
-//                                personAudio,
-//                                "$personId, audio.3gp"
-//                            )
-//                            if (audioRecordViewModel.isFileExists("$personId, audio.3gp")) {
-//                                AudioPlaybackUI(
-//                                    audioRecordViewModel = audioRecordViewModel,
-//                                    audioFilePath = "$personId, audio.3gp"
-//                                )
-//                            }
-//                        }
-//                    }
-//                }
-//
-//                Row(
-//                    verticalAlignment = Alignment.CenterVertically
-//                ) {
-//                    IconButton(onClick = { expanded = !expanded }) {
-//                        Icon(
-//                            imageVector = if (expanded) Icons.Filled.KeyboardArrowUp
-//                            else Icons.Filled.KeyboardArrowDown,
-//                            contentDescription = if (expanded) {
-//                                "Less"
-//                            } else {
-//                                "More"
-//                            },
-////                            tint = Color(categoryColor)
-//                        )
-//                    }
-//
-//                    Icon(
-//                        imageVector = Icons.Filled.Delete,
-//                        contentDescription = "Delete",
-//                        modifier = Modifier.clickable {
-//                            onDeletePerson(person)
-//                        },
-////                        tint = Color(categoryColor)
-//                    )
-//                }
-//
-//            }
-//        }
-//    }
-//}

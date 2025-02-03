@@ -1,10 +1,8 @@
 package hu.ait.connect.ui.screen.components
 
-import androidx.compose.animation.animateContentSize
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,56 +11,42 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.ArrowDropDown
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
-import coil.compose.AsyncImage
-import hu.ait.connect.R
+import androidx.hilt.navigation.compose.hiltViewModel
 import hu.ait.connect.data.category.Category
-import hu.ait.connect.data.person.Person
-import hu.ait.connect.ui.screen.AudioPlaybackUI
-import hu.ait.connect.ui.screen.AudioRecordViewModel
 import hu.ait.connect.ui.screen.category.CategoryViewModel
 import hu.ait.connect.ui.screen.category.SliderWithLabel
 
@@ -105,61 +89,23 @@ fun TagArea(
                             1.dp,
                             borderColor?.let { Color(it) } ?: Color.Transparent)
                     )
-//                    Spacer(modifier = Modifier.defaultMinSize())
                 }
             }
         }
     }
-
-    //    if (tags == null || tags.isEmpty()) {
-//        Text("No memory cues added. Click below to add memory cues", fontStyle = FontStyle.Italic)
-//        FlowRow(
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .padding(2.dp),
-//        ) {
-//            taglist?.forEach { tag ->
-//                if (tag != "") {
-//                    AssistChip(
-//                        onClick = {},
-//                        label = {
-//                            Text(
-//                                tag.toString(),
-//                                style = MaterialTheme.typography.bodyMedium.copy(
-//                                    fontSize = 16.sp,
-//                                ),
-//                            )
-//                        },
-//                        leadingIcon = {
-//                            Icon(
-//                                Icons.Filled.Add,
-//                                contentDescription = "$tag",
-//                                Modifier.size(AssistChipDefaults.IconSize)
-//                            )
-//                        }
-//                    )
-//                    Spacer(modifier = Modifier.width(12.dp))
-//                }
-//            }
-//        }
-//        return
-//    }
 }
 
 @Composable
 fun CategoriesDropdown(
-    list: List<Category>,
-    preselected: String,
+    categoryList: State<List<Category>>,
+    selectedCategory: Category?,
     onSelectionChanged: (myData: Category) -> Unit,
     modifier: Modifier = Modifier,
-    categoryViewModel: CategoryViewModel
+    categoryViewModel: CategoryViewModel = hiltViewModel(),
 ) {
 
-    var selected by remember { mutableStateOf(preselected) }
     var expanded by remember { mutableStateOf(false) }
-    var addCategory by remember { mutableStateOf(false) }
-    var categoryName by remember { mutableStateOf("") }
-    var selectedColor by remember { mutableStateOf<Color>(Color.LightGray) }
+//    var categoryName by remember { mutableStateOf("") }
 
     OutlinedCard(
         modifier = modifier.clickable {
@@ -171,7 +117,7 @@ fun CategoriesDropdown(
             verticalAlignment = Alignment.Top,
         ) {
             Text(
-                text = selected,
+                text = selectedCategory?.name ?: "Select Category",
                 modifier = Modifier
                     .weight(1f)
                     .padding(horizontal = 16.dp, vertical = 8.dp)
@@ -180,110 +126,127 @@ fun CategoriesDropdown(
                 Icons.Outlined.ArrowDropDown, null, modifier =
                 Modifier.padding(8.dp)
             )
-            DropdownMenu(
+
+            CategorySelectionMenu(
                 expanded = expanded,
-                onDismissRequest = { expanded = false },
-                modifier = Modifier.fillMaxWidth(0.70f)
-            ) {
-                if (!addCategory) {
-                    list.forEach { listEntry ->
-                        DropdownMenuItem(
-                            onClick = {
-                                selected = listEntry.name
-                                expanded = false
-                                onSelectionChanged(listEntry)
-                            },
-                            text = {
-                                Text(
-                                    text = listEntry.name,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .align(Alignment.Start)
-                                        .padding(0.dp)
-                                )
-                            },
-                        )
-                    }
-
-                    DropdownMenuItem(
-                        onClick = {
-                            addCategory = true
-                            expanded = false // Close the dropdown when the button is clicked
-                        },
-                        text = {
-                            TextButton(
-                                onClick = {
-                                    addCategory = true
-                                },
-                                modifier = Modifier.padding(0.dp)
-                            ) {
-                                Text(
-                                    text = "Add category",
-                                    style = TextStyle(
-                                        fontSize = 14.sp
-                                    )
-                                )
-                            }
-                        }
-
-                    )
-
-                } else
-                    Column(
-                    ) {
-                        OutlinedTextField(
-                            modifier = Modifier.fillMaxWidth(),
-                            label = { Text("Category Name") },
-                            value = categoryName,
-                            onValueChange = {
-                                categoryName = it
-                                selected = categoryName
-                            },
-                        )
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End
-                        ) {
-                            TextButton(
-                                onClick = {
-                                    categoryViewModel.addCategory(
-                                        categoryName = categoryName,
-                                        categoryColor = selectedColor
-                                    ) {
-                                        newCategory ->
-                                        onSelectionChanged(newCategory)
-                                        addCategory = false
-                                    }
-                                },
-                                enabled = categoryName.isNotEmpty()
-                            ) {
-                                Text("Save")
-                            }
-                            TextButton(
-                                onClick = {
-                                    addCategory = false
-                                },
-                            ) {
-                                Text("Cancel")
-                            }
-                        }
-                        Text(
-                            text = ("Selected Color"),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(20.dp)
-                                .background(selectedColor),
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        AdvancedColorPicker(
-                            onColorChanged = { color ->
-                                selectedColor = color
-                            },
-                        )
-                    }
-            }
+                categoryList = categoryList,
+                onSelectionChanged = onSelectionChanged,
+                categoryViewModel = categoryViewModel,
+                setExpanded = { expanded = it }
+            )
 
         }
+    }
+}
+
+@Composable
+fun CategorySelectionMenu(
+    expanded: Boolean,
+    categoryList: State<List<Category>>,
+    onSelectionChanged: (myData: Category) -> Unit,
+    categoryViewModel: CategoryViewModel,
+    withAddCategory: Boolean = true,
+    setExpanded: (Boolean) -> Unit = {}
+) {
+    var categoryName by remember { mutableStateOf("") }
+    var selectedColor by remember { mutableStateOf<Color>(Color.LightGray) }
+
+    var isAddCategoryExpanded by remember { mutableStateOf(false) }
+
+    DropdownMenu(
+        expanded = expanded,
+        onDismissRequest = {
+            setExpanded(false)
+            isAddCategoryExpanded = false
+        },
+        modifier = Modifier.fillMaxWidth(0.70f)
+    ) {
+
+        if (!isAddCategoryExpanded) {
+            categoryList.value.forEach { listEntry ->
+                DropdownMenuItem(
+                    onClick = {
+                        onSelectionChanged(listEntry)
+                        setExpanded(false)
+                    },
+                    text = {
+                        Text(
+                            text = listEntry.name,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .align(Alignment.Start)
+                                .padding(0.dp)
+                        )
+                    },
+                )
+            }
+
+            if (withAddCategory) {
+                DropdownMenuItem(
+                    onClick = {
+                        isAddCategoryExpanded = true
+                    },
+                    text = {
+                        Text(
+                            text = "Add category",
+                            style = TextStyle(
+                                fontSize = 14.sp
+                            )
+                        )
+                    }
+                )
+            }
+        } else
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .imePadding()
+                    .padding(8.dp),
+            ) {
+                OutlinedTextField(
+                    modifier = Modifier.fillMaxWidth(),
+                    label = { Text("Category Name") },
+                    value = categoryName,
+                    onValueChange = {
+                        categoryName = it
+                    },
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+
+                ) {
+                    TextButton(
+                        onClick = {
+                            categoryViewModel.addCategory(
+                                categoryName = categoryName,
+                                categoryColor = selectedColor
+                            ) {
+                                newCategory ->
+                                onSelectionChanged(newCategory)
+                                setExpanded(false)
+                                isAddCategoryExpanded = false
+                            }
+                        },
+                        enabled = categoryName.isNotEmpty()
+                    ) {
+                        Text("Save")
+                    }
+                    TextButton(
+                        onClick = {
+                            isAddCategoryExpanded = false
+                        },
+                    ) {
+                        Text("Cancel")
+                    }
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+                AdvancedColorPicker(
+                    onColorChanged = { color ->
+                        selectedColor = color
+                    },
+                )
+            }
     }
 }
 
@@ -298,12 +261,26 @@ fun AdvancedColorPicker(
     val selectedColor = Color.hsl(hue, saturation, lightness)
     onColorChanged(selectedColor)
 
-    Column() {
-        Text(
-            text = "Adjust color using slider below:",
-            fontStyle = FontStyle.Italic,
-            modifier = Modifier.padding(bottom = 8.dp)
-        )
+    Column(
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+        ){
+            Text(
+                text = "Adjust color using slider below:",
+                fontStyle = FontStyle.Italic,
+                modifier = Modifier.padding(bottom = 8.dp, end = 8.dp)
+            )
+            Box(
+            ){
+                Spacer(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .background(selectedColor, shape = CircleShape)
+                )
+            }
+        }
+
         SliderWithLabel(
             value = hue,
             valueRange = 0f..360f,
@@ -311,139 +288,3 @@ fun AdvancedColorPicker(
         )
     }
 }
-
-//@Composable
-//fun PersonCard(
-//    categoryColor: Int,
-//    person: Person,
-//    onDeletePerson: (Person) -> Unit,
-//    onNavigateToPersonDetails: (String) -> Unit,
-//    audioRecordViewModel: AudioRecordViewModel = viewModel(factory = AudioRecordViewModel.factory),
-//) {
-//    var personId = person.id
-//    var personName = person.name
-//    var personDescription = person.description
-//    var personAudio = person.audio
-//    var personTags = person.tags
-//    val personImageUri = person.imageUri
-//
-//    var expanded by remember { mutableStateOf(false) }
-//
-//    Card(
-//        colors = CardDefaults.cardColors(
-//            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-//        ),
-//        shape = RoundedCornerShape(20.dp),
-//        elevation = CardDefaults.cardElevation(
-//            defaultElevation = 5.dp
-//        ),
-//        modifier = Modifier
-//            .padding(5.dp)
-//            .fillMaxWidth()
-//            .clickable {
-//                onNavigateToPersonDetails(personId.toString())
-//            },
-//    ) {
-//        Column(
-//            modifier = Modifier
-//                .padding(20.dp)
-//                .animateContentSize()
-//        ) {
-//
-//            Row(
-//                verticalAlignment = Alignment.CenterVertically
-//            ) {
-//
-//                personImageUri?.let { uri ->
-//                    AsyncImage(
-//                        model = uri,
-//                        contentDescription = "Person Image",
-//                        modifier = Modifier
-//                            .size(60.dp)
-//                            .clip(CircleShape)
-//                            .border(2.dp, Color(categoryColor), CircleShape),
-//                        contentScale = ContentScale.Crop
-//                    )
-//                } ?: run {
-//                    Image(
-//                        painter = painterResource(R.drawable.profile_avatar),
-//                        contentDescription = "Profile Picture",
-//                        modifier = Modifier
-//                            .size(65.dp)
-//                            .clip(CircleShape)
-//                            .border(2.dp, Color(categoryColor), CircleShape),
-//                        contentScale = ContentScale.Crop,
-//                    )
-//                }
-//
-//                Spacer(modifier = Modifier.width(8.dp))
-//
-//                Column(
-//                    modifier = Modifier.weight(1f)
-//                ) {
-//
-//                    Text(
-//                        text = "$personName",
-//                        fontSize = 22.sp,
-//                    )
-//                    Spacer(modifier = Modifier.width(8.dp))
-//
-//                    if (
-//                        personTags?.isNotEmpty() == true
-//                    ) {
-//                        TagArea(
-//                            tags = personTags,
-//                            borderColor = categoryColor
-//                        )
-//                    } else {
-//                        Text(
-//                            personDescription,
-//                            maxLines = 2
-//                        )
-//                    }
-//                    if (expanded) {
-//                        if (personAudio != null) {
-//                            audioRecordViewModel.saveAudioFileFromByteArray(
-//                                personAudio,
-//                                "$personId, audio.3gp"
-//                            )
-//                            if (audioRecordViewModel.isFileExists("$personId, audio.3gp")) {
-//                                AudioPlaybackUI(
-//                                    audioRecordViewModel = audioRecordViewModel,
-//                                    audioFilePath = "$personId, audio.3gp"
-//                                )
-//                            }
-//                        }
-//                    }
-//                }
-//
-//                Row(
-//                    verticalAlignment = Alignment.CenterVertically
-//                ) {
-//                    IconButton(onClick = { expanded = !expanded }) {
-//                        Icon(
-//                            imageVector = if (expanded) Icons.Filled.KeyboardArrowUp
-//                            else Icons.Filled.KeyboardArrowDown,
-//                            contentDescription = if (expanded) {
-//                                "Less"
-//                            } else {
-//                                "More"
-//                            },
-////                            tint = Color(categoryColor)
-//                        )
-//                    }
-//
-//                    Icon(
-//                        imageVector = Icons.Filled.Delete,
-//                        contentDescription = "Delete",
-//                        modifier = Modifier.clickable {
-//                            onDeletePerson(person)
-//                        },
-////                        tint = Color(categoryColor)
-//                    )
-//                }
-//
-//            }
-//        }
-//    }
-//}

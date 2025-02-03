@@ -79,6 +79,12 @@ class PersonViewModel @Inject constructor(
         }
     }
 
+    fun deletePeopleByIds(people: List<Int>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            personDAO.deletePeopleByIds(people)
+        }
+    }
+
     fun editPerson(editingPerson: Person) {
         viewModelScope.launch(Dispatchers.IO) {
             personDAO.update(editingPerson)

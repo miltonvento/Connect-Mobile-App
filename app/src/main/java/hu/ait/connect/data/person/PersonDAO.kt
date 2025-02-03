@@ -6,7 +6,6 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Update
-import hu.ait.connect.data.category.Category
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -29,6 +28,9 @@ interface PersonDAO {
     @Query("DELETE from person_table")
     suspend fun deleteAllItems()
 
+    @Query("DELETE FROM person_table WHERE id IN (:ids)")
+    suspend fun deletePeopleByIds(ids: List<Int>)
+
     @Query("SELECT * FROM person_table WHERE categoryId = :categoryId")
     fun getPeopleByCategory(categoryId: Int): Flow<List<Person>>
 
@@ -37,5 +39,6 @@ interface PersonDAO {
         WHERE name LIKE '%' || :query || '%' 
         OR description LIKE '%' || :query || '%' 
     """)
+
     fun searchPeople(query: String): Flow<List<Person>>
 }

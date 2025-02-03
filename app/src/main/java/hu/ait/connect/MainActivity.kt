@@ -4,7 +4,10 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -24,6 +27,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.Color.Companion.Green
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -31,6 +37,7 @@ import hu.ait.connect.ui.screen.assistance.AiAssistanceScreen
 import hu.ait.connect.ui.screen.category.CategoryDetailsScreen
 import hu.ait.connect.ui.screen.category.CategoryScreen
 import hu.ait.connect.ui.screen.category.CategoryViewModel
+import hu.ait.connect.ui.screen.newPerson.NewPersonScreen
 import kotlinx.coroutines.launch
 
 @AndroidEntryPoint
@@ -52,17 +59,20 @@ class MainActivity : ComponentActivity() {
         setContent {
             ConnectTheme {
                 val navController = rememberNavController()
+
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
                     bottomBar = {
                         BottomNavigationBar(navController = navController)
+                    },
+                    content = { innerPadding ->
+                        ConnectAppNavHost(
+                            modifier = Modifier.padding(innerPadding)
+                                .consumeWindowInsets(innerPadding),
+                            navController = navController
+                        )
                     }
-                ) { innerPadding ->
-                    ConnectAppNavHost(
-                        modifier = Modifier.padding(innerPadding),
-                        navController = navController
-                    )
-                }
+                )
             }
         }
 
@@ -77,14 +87,16 @@ fun ConnectAppNavHost(
     startDestination: String = MainNavigation.HomeScreen.route
 ) {
     NavHost(
-        navController = navController, startDestination = startDestination
+        navController = navController,
+        startDestination = startDestination,
+        modifier = modifier.imePadding()
     ) {
         composable(MainNavigation.HomeScreen.route) {
             HomeScreen(
-                modifier = modifier,
                 onNavigateToPersonDetails = { personId ->
                     navController.navigate("persondetails?personId=$personId")
                 },
+                navController = navController
                 )
         }
 
@@ -112,6 +124,10 @@ fun ConnectAppNavHost(
         composable(MainNavigation.AiAssistance.route) {
             AiAssistanceScreen( navController = navController)
         }
+
+        composable(MainNavigation.NewPersonScreen.route) {
+            NewPersonScreen( navController = navController)
+        }
     }
 }
 
@@ -122,7 +138,9 @@ fun BottomNavigationBar(navController: NavHostController) {
         MainNavigation.CategoryScreen,
         MainNavigation.AiAssistance
     )
-    NavigationBar {
+
+    NavigationBar(
+    ) {
         val currentBackStackEntry by navController.currentBackStackEntryAsState()
         val currentDestination = currentBackStackEntry?.destination
 

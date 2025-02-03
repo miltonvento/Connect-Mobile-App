@@ -26,11 +26,6 @@ class CategoryDetailsViewModel @Inject constructor(
     }
         return _category
     }
-
-//    categoryDAO.getCategoryById(categoryId)
-
-
-
 //    suspend fun getCategoryById(categoryId: Int) = categoryDAO.getCategoryById(categoryId)
     fun getPeopleByCategory(categoryId: Int) = personDAO.getPeopleByCategory(categoryId)
 }

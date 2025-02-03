@@ -20,7 +20,7 @@ interface CategoryDAO {
     suspend fun getCategoryByName(name: String): Category?
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insert(category: Category)
+    suspend fun insert(category: Category): Long
 
     @Update
     suspend fun update(category: Category)
